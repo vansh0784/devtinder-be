@@ -4,12 +4,9 @@ import { Document } from 'mongoose';
 @Schema({ timestamps: true })
 export class User extends Document {
     @Prop({ required: true })
-    firstName: string;
+    username: string;
 
     @Prop()
-    lastName: string;
-
-    @Prop({ required: true })
     age: number;
 
     @Prop({ unique: true, required: true })
@@ -18,37 +15,37 @@ export class User extends Document {
     @Prop({ required: true })
     password: string;
 
-    @Prop({ required: true })
+    @Prop()
     phone: string;
 
     @Prop({ type: [String], default: [] })
     skills: string[];
 
-    @Prop({ default: '' })
+    @Prop()
     bio: string;
 
-    @Prop({ default: '' })
+    @Prop()
     experienceLevel: string;
 
-    @Prop({ default: '' })
+    @Prop()
     github: string;
 
-    @Prop({ default: '' })
+    @Prop()
     linkedin: string;
 
-    @Prop({ default: '' })
+    @Prop()
     portfolio: string;
 
-    @Prop({ default: '' })
+    @Prop()
     avatar: string;
 
-    @Prop({ default: '' })
+    @Prop()
     location: string;
 
-    @Prop({ default: true })
+    @Prop()
     isActive: boolean;
 
-    @Prop({ default: false })
+    @Prop()
     isOnline: boolean;
 }
 

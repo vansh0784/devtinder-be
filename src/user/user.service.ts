@@ -1,5 +1,5 @@
 import { BaseResponse } from 'src/common/dto';
-import { CreateUserRequestDto } from './user.dto';
+import { CreateUserRequestDto, UpdateUserDto } from './user.dto';
 import {
     BadRequestException,
     ConflictException,
@@ -22,7 +22,7 @@ export class UserService {
     ) {}
 
     async registerUser(dto: CreateUserRequestDto): Promise<BaseResponse> {
-        if (!dto.email || !dto.password || !dto.firstName)
+        if (!dto.email || !dto.password || !dto.username)
             throw new BadRequestException('Missing required fields');
         const existing_user = await this.userModel.findOne({
             email: dto.email,
@@ -73,6 +73,25 @@ export class UserService {
         if (!user_id) throw new UnauthorizedException('Token has expired');
         const profile = await this.userModel.findById(user_id).lean();
         return { ...profile, password: '' } as User;
+    }
+
+    async updateProfile(userId: string,data: UpdateUserDto): Promise<BaseResponse> {
+         const updatedUser = await this.userModel
+        .findByIdAndUpdate(userId, data, { new: true })
+        .select('-password');
+
+      if (!updatedUser) {
+        return {
+          statusCode: 404,
+          message: 'User not found',
+        };
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Profile updated successfully',
+        data: updatedUser,
+      };
     }
 
     logout(): BaseResponse {
