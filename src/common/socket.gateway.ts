@@ -16,6 +16,8 @@ import { CreateMessageDto } from './dto/create-message.dto';
 @WebSocketGateway({
   cors: { origin: '*' }, // adjust origin for production
   namespace: '/', // default
+  transports: ['websocket', 'polling'], // support both
+
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
