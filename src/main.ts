@@ -12,6 +12,8 @@ async function bootstrap() {
             'https://devtinder-fe-sigma.vercel.app',
         ],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        credentials: true,
     });
     app.useGlobalInterceptors(new ResponseInterceptor(configService));
     const config = new DocumentBuilder()
