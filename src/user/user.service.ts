@@ -22,7 +22,7 @@ export class UserService {
     ) {}
 
     async registerUser(dto: CreateUserRequestDto): Promise<BaseResponse> {
-        console.log(dto)  
+        // console.log(dto)  
         if (!dto.email || !dto.password || !dto.username)
             throw new BadRequestException('Missing required fields');
         const existing_user = await this.userModel.findOne({
