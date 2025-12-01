@@ -7,10 +7,13 @@ export class MessagesController {
 
   // GET /messages/room/:roomId?limit=50
   @Get('room/:roomId')
-  async getByRoom(@Param('roomId') roomId: string, @Query('limit') limit?: string) {
-    const lim = +limit;
+  async getByRoom(
+    @Param('roomId') roomId: string, 
+    @Query('limit') limit?: string
+  ) {
+    const lim = limit ? Number(limit) : undefined;
+
     const messages = await this.messagesService.findByRoom(roomId, lim);
-    // return in ascending order (older -> newer)
-    return messages.reverse();
+    return messages.reverse(); // ascending order
   }
 }

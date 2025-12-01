@@ -9,8 +9,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
-import { MessagesService } from './message.service';
-import { CreateMessageDto } from './dto/create-message.dto';
+import { MessagesService } from '../message/message.service';
+import { CreateMessageDto } from '../message/create-message.dto';
 
 @Injectable()
 @WebSocketGateway({
