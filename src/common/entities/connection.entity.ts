@@ -10,18 +10,28 @@ export enum ConnectionStatus {
 
 @Schema({ timestamps: true })
 export class Connection extends Document {
-    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-    userA: string | User;
-
-    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-    userB: string | User;
+    @Prop({
+        type: Types.ObjectId,
+        ref: User.name,
+        required: true,
+    })
+    userA: Types.ObjectId | User;
 
     @Prop({
-        enum: ConnectionStatus,
+        type: Types.ObjectId,
+        ref: User.name,
         required: true,
-        default: ConnectionStatus.PENDING,
     })
-    status: string;
+    userB: Types.ObjectId | User;
+
+    @Prop({
+        type: String,
+        enum: Object.values(ConnectionStatus),
+        default: ConnectionStatus.PENDING,
+        required: true,
+    })
+    status: ConnectionStatus;
 }
 
-export const ConnectionSchema = SchemaFactory.createForClass(Connection);
+export const ConnectionSchema =
+    SchemaFactory.createForClass(Connection);
