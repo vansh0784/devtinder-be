@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { CommonModule } from './common/common.module';
 import { UserModule } from './user/user.module';
 import { ConnectModule } from './connection/connect.module';
+import { MessagesModule } from './message/message.module';
 import { PostModule } from './posts/posts.module';
 import { DeveloperModule } from './developer/developer.module';
 
@@ -14,6 +15,7 @@ import { DeveloperModule } from './developer/developer.module';
         ConnectModule,
         PostModule,
         DeveloperModule,
+        MessagesModule,
     ],
     controllers: [AppController],
     providers: [AppService],
