@@ -1,4 +1,11 @@
-import { Body, Controller, Patch, Get, UseGuards , UnauthorizedException} from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Patch,
+    Get,
+    UseGuards,
+    UnauthorizedException,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { Post, Req } from '@nestjs/common';
@@ -33,18 +40,8 @@ export class UserController {
     //     return this.userService.getProfile(user_id);
     // }
     @Get('profile')
-    @UseGuards(JwtAuthGuard)
-    async getProfile(@Req() req: any): Promise<User> {
-        console.log('🔍 DEBUG - req.user:', req.user); // ← ADD THIS
-        console.log('🔍 DEBUG - req.session:', req.session); // ← ADD THIS
-
-        const user_id = req.user?.user_id;
-        console.log('🔍 DEBUG - user_id:', user_id); // ← ADD THIS
-
-        if (!user_id) {
-            throw new UnauthorizedException('No user_id in token');
-        }
-
+    async getProfile(@Req() req: { session: SessionDto }): Promise<User> {
+        const user_id = req?.session?.user_id;
         return this.userService.getProfile(user_id);
     }
 
@@ -60,7 +57,7 @@ export class UserController {
         @Body() updateDto: UpdateUserDto,
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
-        const user_id = (req as any).user.user_id;
+        const user_id = req?.session?.user_id;
         return this.userService.updateProfile(user_id?.toString(), updateDto);
     }
 }

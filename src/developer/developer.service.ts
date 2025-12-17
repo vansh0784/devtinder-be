@@ -42,7 +42,6 @@ export class DeveloperService {
             })
             .skip(skip)
             .limit(limit)
-            .select('firstName lastName email phone age')
             .exec();
 
         return feedUsers;
