@@ -75,7 +75,6 @@ import {
     Post,
     Req,
     Body,
-    Param,
     UseGuards,
 } from '@nestjs/common';
 import { ConnectionService } from './connect.service';

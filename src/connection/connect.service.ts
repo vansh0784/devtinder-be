@@ -350,7 +350,7 @@ export class ConnectionService {
             })
             .populate(
                 'userA userB',
-                '_id firstName lastName email phone',
+                '_id username email phone',
             );
 
         return friends.map((conn) => {
