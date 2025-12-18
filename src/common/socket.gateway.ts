@@ -14,7 +14,7 @@ import { CreateMessageDto } from '../message/create-message.dto';
 
 @Injectable()
 @WebSocketGateway({
-  cors: { origin: ['http://localhost:5173',
+  cors: { origin: ['http://localhost:5173',"http://localhost:5174",
             'https://devtinder-fe-sigma.vercel.app',] }, // adjust origin for production
   namespace: '/', // default
   transports: ['websocket', 'polling'], // support both
@@ -37,56 +37,119 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // Client should call: socket.emit('join_room', { roomId, userId })
-  @SubscribeMessage('join_room')
-  async handleJoinRoom(
-    @MessageBody() body: { roomId: string; userId: string },
-    @ConnectedSocket() client: Socket,
-  ) {
-    const { roomId, userId } = body;
-    client.join(roomId);
-    // Attach userId to socket for reference (optional)
-    (client as any).userId = userId;
+  // @SubscribeMessage('join_room')
+  // async handleJoinRoom(
+  //   @MessageBody() body: { roomId: string; userId: string },
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   const { roomId, userId } = body;
+  //   client.join(roomId);
+  //   // Attach userId to socket for reference (optional)
+  //   (client as any).userId = userId;
 
-    // Notify only others in room
-    client.to(roomId).emit('user_joined', { userId });
-    client.emit('room_joined', { roomId });
-    this.logger.log(`${userId} joined room ${roomId}`);
+  //   // Notify only others in room
+  //   client.to(roomId).emit('user_joined', { userId });
+  //   client.emit('room_joined', { roomId });
+  //   this.logger.log(`${userId} joined room ${roomId}`);
+  // }
+
+  @SubscribeMessage('join_room')
+async handleJoinRoom(
+  @MessageBody() body: { roomId: string; userId: string },
+  @ConnectedSocket() client: Socket,
+) {
+  const { roomId, userId } = body;
+
+  // 🧹 LEAVE previous room (VERY IMPORTANT)
+  const previousRoom = (client as any).currentRoom;
+  if (previousRoom) {
+    client.leave(previousRoom);
+    this.logger.log(`${userId} left room ${previousRoom}`);
   }
+
+  // ✅ JOIN new room
+  client.join(roomId);
+  (client as any).userId = userId;
+  (client as any).currentRoom = roomId;
+
+  client.emit('room_joined', { roomId });
+
+  this.logger.log(`${userId} joined room ${roomId}`);
+}
+
 
   // Client sends message payload
   // socket.emit('send_message', { roomId, senderId, receiverId, content })
+  // @SubscribeMessage('send_message')
+  // async handleSendMessage(
+  //   @MessageBody() payload: CreateMessageDto,
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   const { roomId, senderId, receiverId, content } = payload;
+
+  //   // 1) Persist message
+  //   const saved = await this.messagesService.create(payload);
+
+  //   // 2) Emit to receiver(s) in that room (except sender)
+  //   client.to(roomId).emit('receive_message', {
+  //     _id: saved._id,
+  //     roomId,
+  //     senderId,
+  //     receiverId,
+  //     content,
+  //     createdAt: saved.createdAt,
+  //     read: saved.read,
+  //   });
+
+  //   // 3) Ack to sender (so frontend knows it succeeded)
+  //   client.emit('message_sent', {
+  //     _id: saved._id,
+  //     roomId,
+  //     senderId,
+  //     receiverId,
+  //     content,
+  //     createdAt: saved.createdAt,
+  //     read: saved.read,
+  //   });
+  // }
+
   @SubscribeMessage('send_message')
-  async handleSendMessage(
-    @MessageBody() payload: CreateMessageDto,
-    @ConnectedSocket() client: Socket,
-  ) {
-    const { roomId, senderId, receiverId, content } = payload;
+async handleSendMessage(
+  @MessageBody() payload: CreateMessageDto,
+  @ConnectedSocket() client: Socket,
+) {
+  const { roomId, senderId, receiverId, content } = payload;
 
-    // 1) Persist message
-    const saved = await this.messagesService.create(payload);
-
-    // 2) Emit to receiver(s) in that room (except sender)
-    client.to(roomId).emit('receive_message', {
-      _id: saved._id,
-      roomId,
-      senderId,
-      receiverId,
-      content,
-      createdAt: saved.createdAt,
-      read: saved.read,
-    });
-
-    // 3) Ack to sender (so frontend knows it succeeded)
-    client.emit('message_sent', {
-      _id: saved._id,
-      roomId,
-      senderId,
-      receiverId,
-      content,
-      createdAt: saved.createdAt,
-      read: saved.read,
-    });
+  // 🛑 SECURITY + LOGIC CHECK
+  if ((client as any).currentRoom !== roomId) {
+    this.logger.warn(
+      `Blocked message: user ${senderId} not in room ${roomId}`,
+    );
+    return;
   }
+
+  // 1️⃣ Save message
+  const saved = await this.messagesService.create(payload);
+
+  // 2️⃣ Emit to everyone ELSE in room
+  client.to(roomId).emit('receive_message', saved);
+
+  // 3️⃣ Ack sender
+  client.emit('message_sent', saved);
+}
+
+@SubscribeMessage('load_messages')
+async handleLoadMessages(
+  @MessageBody() body: { roomId: string },
+  @ConnectedSocket() client: Socket,
+) {
+  const { roomId } = body;
+
+  const messages = await this.messagesService.findByRoom(roomId);
+
+  client.emit('chat_history', messages);
+}
+
 
   // Optional: typing indicator
   @SubscribeMessage('typing')
