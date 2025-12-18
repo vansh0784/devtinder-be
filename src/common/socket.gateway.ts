@@ -14,10 +14,9 @@ import { CreateMessageDto } from '../message/create-message.dto';
 
 @Injectable()
 @WebSocketGateway({
-  cors: { origin: ['http://localhost:5173',"http://localhost:5174",
-            'https://devtinder-fe-sigma.vercel.app',] }, // adjust origin for production
+  cors: { origin: "*" }, // adjust origin for production
   namespace: '/', // default
-  transports: ['websocket', 'polling'], // support both
+  transports: ['websocket'], // support both
 
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
