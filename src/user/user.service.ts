@@ -22,7 +22,7 @@ export class UserService {
     ) { }
 
     async registerUser(dto: CreateUserRequestDto): Promise<BaseResponse> {
-        // console.log(dto)  
+        // console.log(dto)
         if (!dto.email || !dto.password || !dto.username)
             throw new BadRequestException('Missing required fields');
         const existing_user = await this.userModel.findOne({
@@ -80,10 +80,8 @@ export class UserService {
             throw new BadRequestException('Missing Auth0 user data');
         }
 
-        // 1️⃣ Find user by email
         let user = await this.userModel.findOne({ email: data.email });
 
-        // 2️⃣ Create user if not exists
         if (!user) {
             user = await this.userModel.create({
                 email: data.email,
@@ -93,7 +91,6 @@ export class UserService {
             });
         }
 
-        // 3️⃣ Create SAME JWT as normal login
         const payload = {
             email: user.email,
             user_id: user.id,

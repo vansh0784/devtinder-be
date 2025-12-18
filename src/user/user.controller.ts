@@ -61,7 +61,7 @@ export class UserController {
         return this.userService.updateProfile(user_id?.toString(), updateDto);
     }
 
-    @Post('auth0')
+    @Post('auth/google')
     async auth0Login(
         @Body()
         body: { email: string; username: string; avatar?: string },

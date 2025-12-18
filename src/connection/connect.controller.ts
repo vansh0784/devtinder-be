@@ -74,6 +74,7 @@ import {
     Get,
     Post,
     Req,
+    Body,
     Param,
     UseGuards,
 } from '@nestjs/common';
@@ -88,39 +89,34 @@ import { SessionDto } from 'src/common/dto';
 @Controller('connection')
 @ApiTags('Connection')
 export class ConnectionController {
-    constructor(
-        private readonly connectService: ConnectionService,
-    ) {}
+    constructor(private readonly connectService: ConnectionService) {}
 
     // =========================
     // RIGHT SWIPE
     // =========================
     @UseGuards(JwtAuthGuard)
-    @Post('right/:receiverId')
+    @Post('right')
     async interested(
-        @Param('receiverId') receiverId: string,
+        @Body() body: { recieverId: string },
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        return this.connectService.interested(
-            currentUserId,
-            receiverId,
-        );
+        return this.connectService.interested(currentUserId, body.recieverId);
     }
 
     // =========================
     // LEFT SWIPE
     // =========================
     @UseGuards(JwtAuthGuard)
-    @Post('left/:receiverId')
+    @Post('left')
     async notInterested(
-        @Param('receiverId') receiverId: string,
+        @Body() body: { recieverId: string },
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return this.connectService.notInterested(
             currentUserId,
-            receiverId,
+            body.recieverId,
         );
     }
 
@@ -128,14 +124,14 @@ export class ConnectionController {
     // ACCEPT REQUEST (OPTIONAL)
     // =========================
     @UseGuards(JwtAuthGuard)
-    @Post('accept/:requestId')
+    @Post('accept')
     async acceptRequest(
-        @Param('requestId') requestId: string,
+        @Body() body: { requestId: string },
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return this.connectService.acceptRequest(
-            requestId,
+            body?.requestId,
             currentUserId,
         );
     }
@@ -144,16 +140,13 @@ export class ConnectionController {
     // REJECT REQUEST
     // =========================
     @UseGuards(JwtAuthGuard)
-    @Post('reject/:requestId')
+    @Post('reject')
     async rejectRequest(
-        @Param('requestId') requestId: string,
+        @Body() body: { requestId: string },
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        return this.connectService.rejectRequest(
-            requestId,
-            currentUserId,
-        );
+        return this.connectService.rejectRequest(body.requestId, currentUserId);
     }
 
     // =========================
@@ -165,9 +158,7 @@ export class ConnectionController {
         @Req() req: { session: SessionDto },
     ): Promise<Connection[]> {
         const currentUserId = req.session.user_id;
-        return this.connectService.getPendingRequest(
-            currentUserId,
-        );
+        return this.connectService.getPendingRequest(currentUserId);
     }
 
     // =========================
@@ -175,12 +166,8 @@ export class ConnectionController {
     // =========================
     @UseGuards(JwtAuthGuard)
     @Get('matches')
-    async allFriends(
-        @Req() req: { session: SessionDto },
-    ): Promise<User[]> {
+    async allFriends(@Req() req: { session: SessionDto }): Promise<User[]> {
         const currentUserId = req.session.user_id;
-        return this.connectService.allFriends(
-            currentUserId,
-        );
+        return this.connectService.allFriends(currentUserId);
     }
 }
