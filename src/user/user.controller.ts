@@ -17,7 +17,7 @@ import { User } from 'src/common/entities/user.entity';
 @Controller('user')
 @ApiTags('User')
 export class UserController {
-    constructor(private readonly userService: UserService) {}
+    constructor(private readonly userService: UserService) { }
 
     @Post('register')
     async registerUser(
@@ -60,4 +60,13 @@ export class UserController {
         const user_id = req?.session?.user_id;
         return this.userService.updateProfile(user_id?.toString(), updateDto);
     }
+
+    @Post('auth0')
+    async auth0Login(
+        @Body()
+        body: { email: string; username: string; avatar?: string },
+    ): Promise<BaseResponse> {
+        return this.userService.auth0Login(body);
+    }
+
 }

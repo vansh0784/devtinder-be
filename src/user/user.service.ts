@@ -19,7 +19,7 @@ export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<User>,
         private readonly configService: ConfigService,
-    ) {}
+    ) { }
 
     async registerUser(dto: CreateUserRequestDto): Promise<BaseResponse> {
         // console.log(dto)  
@@ -70,29 +70,72 @@ export class UserService {
         };
     }
 
+    async auth0Login(data: {
+        email: string;
+        username: string;
+        avatar?: string;
+    }): Promise<BaseResponse> {
+
+        if (!data.email || !data.username) {
+            throw new BadRequestException('Missing Auth0 user data');
+        }
+
+        // 1️⃣ Find user by email
+        let user = await this.userModel.findOne({ email: data.email });
+
+        // 2️⃣ Create user if not exists
+        if (!user) {
+            user = await this.userModel.create({
+                email: data.email,
+                username: data.username,
+                avatar: data.avatar,
+                isActive: true,
+            });
+        }
+
+        // 3️⃣ Create SAME JWT as normal login
+        const payload = {
+            email: user.email,
+            user_id: user.id,
+        };
+
+        const jwtSecret = this.configService.get<string>('JWT_SECRET_KEY');
+        if (!jwtSecret) {
+            throw new Error('JWT_SECRET_KEY is not defined');
+        }
+
+        const token = sign(payload, jwtSecret);
+
+        return {
+            statusCode: 200,
+            message: 'Auth0 login successful',
+            access_token: token,
+        };
+    }
+
     async getProfile(user_id: string): Promise<User> {
         if (!user_id) throw new UnauthorizedException('Token has expired');
         const profile = await this.userModel.findById(user_id).lean();
         return { ...profile, password: '' } as User;
     }
 
-    async updateProfile(userId: string,data: UpdateUserDto): Promise<BaseResponse> {
-         const updatedUser = await this.userModel
-        .findByIdAndUpdate(userId, data, { new: true })
-        .select('-password');
+    async updateProfile(userId: string, data: UpdateUserDto): Promise<BaseResponse> {
+        const updatedUser = await this.userModel
+            .findByIdAndUpdate(userId, data, { new: true })
+            .select('-password');
 
-      if (!updatedUser) {
+        if (!updatedUser) {
+            return {
+                statusCode: 404,
+                message: 'User not found',
+            };
+        }
+
         return {
-          statusCode: 404,
-          message: 'User not found',
+            statusCode: 200,
+            message: 'Profile updated successfully',
+            data: updatedUser,
         };
-      }
-
-      return {
-        statusCode: 200,
-        message: 'Profile updated successfully',
-        data: updatedUser,
-      };
     }
 
     logout(): BaseResponse {
