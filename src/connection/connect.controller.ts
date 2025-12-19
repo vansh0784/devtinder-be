@@ -84,11 +84,12 @@ import { Connection } from 'src/common/entities/connection.entity';
 import { JwtAuthGuard } from 'src/common/jwt.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { SessionDto } from 'src/common/dto';
+// import { ChatGateway } from 'src/common/socket.gateway';
 
 @Controller('connection')
 @ApiTags('Connection')
 export class ConnectionController {
-    constructor(private readonly connectService: ConnectionService) {}
+    constructor(private readonly connectService: ConnectionService,) { }
 
     // =========================
     // RIGHT SWIPE
@@ -100,7 +101,16 @@ export class ConnectionController {
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        return this.connectService.interested(currentUserId, body.recieverId);
+        const response = await this.connectService.interested(
+            currentUserId,
+            body.recieverId,
+        );
+        // this.chatGateway.sendRequestNotification(
+        //     currentUserId,
+        //     body.recieverId,
+        // );
+
+        return response;
     }
 
     // =========================
