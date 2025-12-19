@@ -8,13 +8,15 @@ import {
     Connection,
     ConnectionSchema,
 } from 'src/common/entities/connection.entity';
+import { User, UserSchema } from 'src/common/entities/user.entity';
 
 @Module({
     imports: [
         AWSModule,
-        MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }]),
         MongooseModule.forFeature([
+            { name: Post.name, schema: PostSchema },
             { name: Connection.name, schema: ConnectionSchema },
+            { name: User.name, schema: UserSchema },
         ]),
     ],
     providers: [PostService],

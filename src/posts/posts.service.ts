@@ -11,11 +11,13 @@ import { CreatePostDto, UpdatePostDto } from './posts.dto';
 import { S3Service } from 'src/common/aws/s3Service';
 import { BaseResponse } from 'src/common/dto';
 import { Connection } from 'src/common/entities/connection.entity';
+import { User } from 'src/common/entities/user.entity';
 
 @Injectable()
 export class PostService {
     constructor(
         @InjectModel(Post.name) private readonly postModel: Model<Post>,
+        @InjectModel(User.name) private readonly userModel: Model<User>,
         @InjectModel(Connection.name)
         private readonly connectModel: Model<Connection>,
         private readonly s3Service: S3Service,
@@ -29,17 +31,31 @@ export class PostService {
         if (!currentUserId || !file || !dto)
             throw new BadRequestException('Missing required fields');
 
-        const fileUrl: string = await this.s3Service.uploadFile(file);
-        if (!fileUrl)
-            throw new BadRequestException('File uploading to S3 gets failed');
+        const user = await this.userModel.findById(currentUserId);
+        if (!user) throw new BadRequestException('Invalid user');
 
-        await this.postModel.create({
+        const fileUrl: string = await this.s3Service.uploadFile(file);
+        if (!fileUrl) throw new BadRequestException('Upload to S3 failed');
+
+        const post = await this.postModel.create({
             author: currentUserId,
-            images: fileUrl,
-            ...dto,
+            authorName: user.username,
+            authorUsername: user.username,
+            authorAvatar: user.avatar,
+            authorVerified: true,
+            images: [fileUrl],
+            text: dto.text || '',
+            code: dto.code || '',
+            projectLink: dto.projectLink || '',
+            tags: dto.tags || [],
+            visibility: dto.visibility || 'public',
         });
 
-        return { statusCode: 200, message: 'Post created successfully!' };
+        return {
+            statusCode: 200,
+            message: 'Post created successfully!',
+            data: post,
+        };
     }
 
     async getFeed(
@@ -68,7 +84,7 @@ export class PostService {
             .skip(skip)
             .limit(size)
             .sort({ createdAt: -1 })
-            .select('author images text code likes comment tags')
+            .populate('author', 'username _id')
             .exec();
 
         if (posts.length < size) {
@@ -89,6 +105,8 @@ export class PostService {
                         likes: 1,
                         comments: 1,
                         tags: 1,
+                        authorName: 1,
+                        authorUserName: 1,
                     },
                 },
             ]);
@@ -111,6 +129,7 @@ export class PostService {
             .limit(size)
             .sort({ createdAt: -1 })
             .select('author images text code likes comment tags')
+            .populate('author', 'username avatar')
             .exec();
     }
 
@@ -127,6 +146,7 @@ export class PostService {
             .limit(size)
             .sort({ createdAt: -1 })
             .select('author images text code likes comment tags')
+            .populate('author', 'username avatar')
             .exec();
     }
 
@@ -169,8 +189,12 @@ export class PostService {
             throw new UnauthorizedException(
                 'Not authorized to update the post',
             );
-        const imageUrl = post.images;
-        await this.s3Service.deleteFile(imageUrl);
+
+        if (post.images && post.images.length > 0) {
+            for (const url of post.images) {
+                await this.s3Service.deleteFile(url);
+            }
+        }
         await this.postModel.findByIdAndDelete(postId);
 
         return { statusCode: 200, message: 'Post deleted succesfully' };

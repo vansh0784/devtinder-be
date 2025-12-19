@@ -10,13 +10,13 @@ import {
     Req,
     UseGuards,
     UseInterceptors,
-    UploadedFiles,
+    UploadedFile,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/common/jwt.guard';
 import { PostService } from './posts.service';
 import { CreatePostDto, UpdatePostDto } from './posts.dto';
 import { BaseResponse, SessionDto } from 'src/common/dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('posts')
@@ -26,14 +26,15 @@ export class PostController {
     constructor(private readonly postService: PostService) {}
 
     @Post()
-    @UseInterceptors(FilesInterceptor('images'))
+    @UseInterceptors(FileInterceptor('image'))
     async createPost(
         @Body() dto: CreatePostDto,
-        @UploadedFiles() files: Express.Multer.File,
+        @UploadedFile() file: Express.Multer.File,
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        return await this.postService.createPost(currentUserId, dto, files);
+        console.log('file', file);
+        return await this.postService.createPost(currentUserId, dto, file);
     }
 
     @Get()

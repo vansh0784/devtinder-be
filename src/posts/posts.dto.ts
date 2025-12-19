@@ -1,64 +1,95 @@
-import {
-    IsString,
-    IsOptional,
-    IsArray,
-    IsUrl,
-    IsEnum,
-} from 'class-validator';
+import { IsString, IsOptional, IsArray, IsBoolean, IsEnum } from 'class-validator';
 
 export class CreatePostDto {
-    @IsOptional()
+
     @IsString()
+    author: string;
+
+    @IsString()
+    authorName: string;
+
+    @IsString()
+    authorUsername: string;
+
+    @IsString()
+    @IsOptional()
+    authorAvatar?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    authorVerified?: boolean;
+
+    @IsString()
+    @IsOptional()
     text?: string;
 
+    @IsArray()
     @IsOptional()
-    @IsString()
-    images?: string;
+    images?: string[];
 
-    @IsOptional()
     @IsString()
+    @IsOptional()
     code?: string;
 
+    @IsString()
     @IsOptional()
-    @IsUrl()
-    link?: string;
+    projectLink?: string;
 
-    @IsOptional()
     @IsArray()
-    @IsString({ each: true })
+    @IsOptional()
     tags?: string[];
 
+    @IsBoolean()
     @IsOptional()
-    @IsString()
-    visibility?: 'public' | 'connections' | 'private';
+    isPinned?: boolean;
+
+    @IsEnum(['public', 'private'])
+    @IsOptional()
+    visibility?: string;
 }
 
 export class UpdatePostDto {
-    @IsOptional()
     @IsString()
+    @IsOptional()
+    authorName?: string;
+
+    @IsString()
+    @IsOptional()
+    authorUsername?: string;
+
+    @IsString()
+    @IsOptional()
+    authorAvatar?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    authorVerified?: boolean;
+
+    @IsString()
+    @IsOptional()
     text?: string;
 
+    @IsArray()
     @IsOptional()
-    @IsString()
-    images?: string;
+    images?: string[];
 
-    @IsOptional()
     @IsString()
+    @IsOptional()
     code?: string;
 
-    @IsOptional()
     @IsString()
-    link?: string;
-
     @IsOptional()
+    projectLink?: string;
+
     @IsArray()
-    @IsString({ each: true })
+    @IsOptional()
     tags?: string[];
 
-    @IsOptional()
-    @IsEnum(['public', 'private', 'connections'])
-    visibility?: string;
-
+    @IsBoolean()
     @IsOptional()
     isPinned?: boolean;
+
+    @IsEnum(['public', 'private'])
+    @IsOptional()
+    visibility?: string;
 }

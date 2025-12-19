@@ -31,6 +31,7 @@ export class S3Service {
 
     async uploadFile(file: Express.Multer.File): Promise<string> {
         if (!file) throw new BadRequestException('No file provided');
+
         const fileKey = `${uuidV4()}-${file.originalname}`;
 
         const uploadParams = {
@@ -38,10 +39,14 @@ export class S3Service {
             Key: fileKey,
             Body: file.buffer,
             ContentType: file.mimetype,
+            ContentDisposition: 'inline',
         };
+
+        console.log("upload params",uploadParams );
 
         try {
             await this.s3Client.send(new PutObjectCommand(uploadParams));
+
             return `https://${this.bucketName}.s3.${this.configService.get<string>('AWS_REGION')}.amazonaws.com/${fileKey}`;
         } catch (err) {
             console.error('Error uploading to S3', err);
