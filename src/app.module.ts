@@ -7,6 +7,10 @@ import { ConnectModule } from './connection/connect.module';
 import { MessagesModule } from './message/message.module';
 import { PostModule } from './posts/posts.module';
 import { DeveloperModule } from './developer/developer.module';
+import { NotificationModule } from "./notification/notification.module";
+
+import { MulterModule } from '@nestjs/platform-express';
+import multer from 'multer';
 
 @Module({
     imports: [
@@ -16,8 +20,12 @@ import { DeveloperModule } from './developer/developer.module';
         PostModule,
         DeveloperModule,
         MessagesModule,
+        NotificationModule,
+        MulterModule.register({
+            storage: multer.memoryStorage(),
+        }),
     ],
     controllers: [AppController],
     providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

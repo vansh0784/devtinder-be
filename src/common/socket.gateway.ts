@@ -11,6 +11,11 @@ import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
 import { MessagesService } from '../message/message.service';
 import { CreateMessageDto } from '../message/create-message.dto';
+import { NotificationService } from 'src/notification/notification.service';
+import type { Adapter } from 'socket.io-adapter';
+
+
+const onlineUsers = new Map<string, string>(); // userId -> socketId
 
 @Injectable()
 @WebSocketGateway({
@@ -23,132 +28,147 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private logger = new Logger('ChatGateway');
 
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(private readonly messagesService: MessagesService, private readonly notificationService: NotificationService,
+  ) { }
 
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
-    // Optionally store mapping socketId -> userId if client provides userId on connect
+    const userId = client.handshake.auth?.userId;
+
+    if (userId) {
+      onlineUsers.set(userId, client.id);
+      (client as any).userId = userId;
+      this.logger.log(`User ${userId} connected with socket ${client.id}`);
+    } else {
+      this.logger.warn(`Socket connected without userId: ${client.id}`);
+    }
+    this.logger.log(`🟢 Online users: ${Array.from(onlineUsers.keys())}`);
+
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
-    // Optionally inform others about offline status
+    const userId = (client as any).userId;
+
+    if (userId) {
+      onlineUsers.delete(userId);
+      this.logger.log(`User ${userId} disconnected`);
+    } else {
+      this.logger.log(`Socket disconnected: ${client.id}`);
+    }
   }
-
-  // Client should call: socket.emit('join_room', { roomId, userId })
-  // @SubscribeMessage('join_room')
-  // async handleJoinRoom(
-  //   @MessageBody() body: { roomId: string; userId: string },
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   const { roomId, userId } = body;
-  //   client.join(roomId);
-  //   // Attach userId to socket for reference (optional)
-  //   (client as any).userId = userId;
-
-  //   // Notify only others in room
-  //   client.to(roomId).emit('user_joined', { userId });
-  //   client.emit('room_joined', { roomId });
-  //   this.logger.log(`${userId} joined room ${roomId}`);
-  // }
 
   @SubscribeMessage('join_room')
-async handleJoinRoom(
-  @MessageBody() body: { roomId: string; userId: string },
-  @ConnectedSocket() client: Socket,
-) {
-  const { roomId, userId } = body;
+  async handleJoinRoom(
+    @MessageBody() body: { roomId: string; userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId, userId } = body;
 
-  // 🧹 LEAVE previous room (VERY IMPORTANT)
-  const previousRoom = (client as any).currentRoom;
-  if (previousRoom) {
-    client.leave(previousRoom);
-    this.logger.log(`${userId} left room ${previousRoom}`);
+    // 🧹 LEAVE previous room (VERY IMPORTANT)
+    const previousRoom = (client as any).currentRoom;
+    if (previousRoom) {
+      client.leave(previousRoom);
+      this.logger.log(`${userId} left room ${previousRoom}`);
+    }
+
+    // ✅ JOIN new room
+    client.join(roomId);
+    (client as any).userId = userId;
+    (client as any).currentRoom = roomId;
+
+    client.emit('room_joined', { roomId });
+
+    this.logger.log(`${userId} joined room ${roomId}`);
   }
-
-  // ✅ JOIN new room
-  client.join(roomId);
-  (client as any).userId = userId;
-  (client as any).currentRoom = roomId;
-
-  client.emit('room_joined', { roomId });
-
-  this.logger.log(`${userId} joined room ${roomId}`);
-}
-
-
-  // Client sends message payload
-  // socket.emit('send_message', { roomId, senderId, receiverId, content })
-  // @SubscribeMessage('send_message')
-  // async handleSendMessage(
-  //   @MessageBody() payload: CreateMessageDto,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   const { roomId, senderId, receiverId, content } = payload;
-
-  //   // 1) Persist message
-  //   const saved = await this.messagesService.create(payload);
-
-  //   // 2) Emit to receiver(s) in that room (except sender)
-  //   client.to(roomId).emit('receive_message', {
-  //     _id: saved._id,
-  //     roomId,
-  //     senderId,
-  //     receiverId,
-  //     content,
-  //     createdAt: saved.createdAt,
-  //     read: saved.read,
-  //   });
-
-  //   // 3) Ack to sender (so frontend knows it succeeded)
-  //   client.emit('message_sent', {
-  //     _id: saved._id,
-  //     roomId,
-  //     senderId,
-  //     receiverId,
-  //     content,
-  //     createdAt: saved.createdAt,
-  //     read: saved.read,
-  //   });
-  // }
 
   @SubscribeMessage('send_message')
-async handleSendMessage(
-  @MessageBody() payload: CreateMessageDto,
-  @ConnectedSocket() client: Socket,
-) {
-  const { roomId, senderId, receiverId, content } = payload;
+  async handleSendMessage(
+    @MessageBody() payload: CreateMessageDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId, senderId, receiverId, content } = payload;
 
-  // 🛑 SECURITY + LOGIC CHECK
-  if ((client as any).currentRoom !== roomId) {
-    this.logger.warn(
-      `Blocked message: user ${senderId} not in room ${roomId}`,
-    );
-    return;
+    // 🛑 SECURITY + LOGIC CHECK
+    if ((client as any).currentRoom !== roomId) {
+      this.logger.warn(
+        `Blocked message: user ${senderId} not in room ${roomId}`,
+      );
+      return;
+    }
+
+    // 1️⃣ Save message
+    const saved = await this.messagesService.create(payload);
+
+    // 2️⃣ Emit to everyone ELSE in room
+    client.to(roomId).emit('receive_message', saved);
+
+    // 2️⃣.1 🔔 MESSAGE NOTIFICATION (if receiver not in room)
+    const receiverSocketId = onlineUsers.get(receiverId);
+    // const receiverInRoom =
+    //   receiverSocketId &&
+    //   this.server.sockets.adapter.rooms.get(roomId)?.has(receiverSocketId);
+
+    let receiverInRoom = false;
+
+    if (receiverSocketId) {
+const adapter = this.server.adapter as unknown as Adapter;
+      const room = adapter.rooms.get(roomId);
+      receiverInRoom = room ? room.has(receiverSocketId) : false;
+    }
+
+
+    // if (receiverSocketId && !receiverInRoom) {
+    //   this.server.to(receiverSocketId).emit('notification', {
+    //     type: 'MESSAGE',
+    //     senderId,
+    //     message: 'sent you a message',
+    //     roomId,
+    //     createdAt: new Date(),
+    //   });
+    // }
+
+    // 3️⃣ Ack sender
+    // 🔔 Save notification in DB
+    await this.notificationService.create({
+      receiverId,
+      senderId,
+      type: 'MESSAGE',
+      roomId,
+      message: 'sent you a message',
+    });
+    this.logger.log(`📦 Notification saved for ${receiverId}`);
+
+    // 🔔 Emit real-time notification (if online & not in room)
+    if (receiverSocketId && !receiverInRoom) {
+      this.server.to(receiverSocketId).emit('notification', {
+        type: 'MESSAGE',
+        senderId,
+        message: 'sent you a message',
+        roomId,
+        createdAt: new Date(),
+      });
+    }
+
+    this.logger.log(`🔔 Emitting notification to ${receiverSocketId}`);
+
+
+    client.emit('message_sent', saved);
+
+    this.logger.log(`📡 receiverSocketId = ${receiverSocketId}`);
+
+
   }
 
-  // 1️⃣ Save message
-  const saved = await this.messagesService.create(payload);
+  @SubscribeMessage('load_messages')
+  async handleLoadMessages(
+    @MessageBody() body: { roomId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId } = body;
 
-  // 2️⃣ Emit to everyone ELSE in room
-  client.to(roomId).emit('receive_message', saved);
+    const messages = await this.messagesService.findByRoom(roomId);
 
-  // 3️⃣ Ack sender
-  client.emit('message_sent', saved);
-}
-
-@SubscribeMessage('load_messages')
-async handleLoadMessages(
-  @MessageBody() body: { roomId: string },
-  @ConnectedSocket() client: Socket,
-) {
-  const { roomId } = body;
-
-  const messages = await this.messagesService.findByRoom(roomId);
-
-  client.emit('chat_history', messages);
-}
-
+    client.emit('chat_history', messages);
+  }
 
   // Optional: typing indicator
   @SubscribeMessage('typing')
@@ -158,4 +178,39 @@ async handleLoadMessages(
   ) {
     client.to(data.roomId).emit('user_typing', data);
   }
+
+  @SubscribeMessage('send_request')
+  async handleSendRequest(
+    @MessageBody() data: { senderId: string; receiverId: string },
+  ) {
+    const receiverSocketId = onlineUsers.get(data.receiverId);
+
+    // if (receiverSocketId) {
+    //   this.server.to(receiverSocketId).emit('notification', {
+    //     type: 'REQUEST',
+    //     senderId: data.senderId,
+    //     message: 'sent you a connection request',
+    //     createdAt: new Date(),
+    //   });
+    // }
+    // 🔔 Save request notification in DB
+    await this.notificationService.create({
+      receiverId: data.receiverId,
+      senderId: data.senderId,
+      type: 'REQUEST',
+      message: 'sent you a connection request',
+    });
+
+    // 🔔 Emit real-time notification if online
+    if (receiverSocketId) {
+      this.server.to(receiverSocketId).emit('notification', {
+        type: 'REQUEST',
+        senderId: data.senderId,
+        message: 'sent you a connection request',
+        createdAt: new Date(),
+      });
+    }
+
+  }
+
 }
