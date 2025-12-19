@@ -110,7 +110,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     let receiverInRoom = false;
 
     if (receiverSocketId) {
-const adapter = this.server.adapter as unknown as Adapter;
+      const adapter = this.server.adapter as unknown as Adapter;
       const room = adapter.rooms.get(roomId);
       receiverInRoom = room ? room.has(receiverSocketId) : false;
     }
@@ -212,5 +212,28 @@ const adapter = this.server.adapter as unknown as Adapter;
     }
 
   }
+
+  sendRequestNotification(senderId: string, receiverId: string) {
+    const receiverSocketId = onlineUsers.get(receiverId);
+
+    // Save notification
+    this.notificationService.create({
+      senderId,
+      receiverId,
+      type: 'REQUEST',
+      message: 'sent you a connection request',
+    });
+
+    // Emit realtime notification
+    if (receiverSocketId) {
+      this.server.to(receiverSocketId).emit('notification', {
+        type: 'REQUEST',
+        senderId,
+        message: 'sent you a connection request',
+        createdAt: new Date(),
+      });
+    }
+  }
+
 
 }
