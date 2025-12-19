@@ -7,6 +7,7 @@ import { ConnectModule } from './connection/connect.module';
 import { MessagesModule } from './message/message.module';
 import { PostModule } from './posts/posts.module';
 import { DeveloperModule } from './developer/developer.module';
+import { NotificationModule } from "./notification/notification.module";
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { DeveloperModule } from './developer/developer.module';
         PostModule,
         DeveloperModule,
         MessagesModule,
+            NotificationModule,
     ],
     controllers: [AppController],
     providers: [AppService],
