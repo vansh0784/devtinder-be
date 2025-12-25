@@ -1,17 +1,19 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
+import { User } from "./user.entity";
 
 export type NotificationDocument = Notification & Document;
 
 @Schema({ timestamps: true })
 export class Notification {
-  @Prop({ required: true })
-  receiverId: string;
 
-  @Prop({ required: true })
-  senderId: string;
+  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
+  receiverId: Types.ObjectId;
 
-  @Prop({ required: true })
+  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
+  senderId: Types.ObjectId;
+
+  @Prop({ required: true, enum: ["REQUEST", "MESSAGE"] })
   type: "REQUEST" | "MESSAGE";
 
   @Prop()
