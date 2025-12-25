@@ -9,9 +9,9 @@ export class NotificationController {
     constructor(private readonly service: NotificationService) {}
 
     @Get('unread')
-    getUnread(@Req() req: { sessionDto: SessionDto }) {
+    getUnread(@Req() req) {
         // 🔑 User info comes from req.session (set by JwtAuthGuard)
-        const userId = req?.sessionDto?.user_id;
+        const userId = req.user_id;
         return this.service.getUnread(userId);
     }
 
@@ -21,8 +21,8 @@ export class NotificationController {
     }
 
     @Patch('read-all')
-    markAll(@Req() req: { sessionDto: SessionDto }) {
-        const userId = req?.sessionDto?.user_id;
+    markAll(@Req() req) {
+        const userId = req.user_id;
         return this.service.markAllAsRead(userId);
     }
 }
