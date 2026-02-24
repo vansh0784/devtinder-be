@@ -13,6 +13,8 @@ import { MessagesService } from '../message/message.service';
 import { CreateMessageDto } from '../message/create-message.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import type { Adapter } from 'socket.io-adapter';
+import { Types } from "mongoose";
+
 
 
 const onlineUsers = new Map<string, string>(); // userId -> socketId
@@ -72,7 +74,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // ✅ JOIN new room
     client.join(roomId);
-    (client as any).userId = userId;
+    // (client as any).userId = userId;
     (client as any).currentRoom = roomId;
 
     client.emit('room_joined', { roomId });
@@ -102,7 +104,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.to(roomId).emit('receive_message', saved);
 
     // 2️⃣.1 🔔 MESSAGE NOTIFICATION (if receiver not in room)
-    const receiverSocketId = onlineUsers.get(receiverId);
+    // const receiverSocketId = onlineUsers.get(receiverId);
+
+    const receiverSocketId = onlineUsers.get(receiverId.toString());
+
     // const receiverInRoom =
     //   receiverSocketId &&
     //   this.server.sockets.adapter.rooms.get(roomId)?.has(receiverSocketId);
@@ -129,8 +134,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 3️⃣ Ack sender
     // 🔔 Save notification in DB
     await this.notificationService.create({
-      receiverId,
-      senderId,
+      receiverId: new Types.ObjectId(receiverId),
+  senderId: new Types.ObjectId(senderId),
       type: 'MESSAGE',
       roomId,
       message: 'sent you a message',
@@ -183,7 +188,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleSendRequest(
     @MessageBody() data: { senderId: string; receiverId: string },
   ) {
-    const receiverSocketId = onlineUsers.get(data.receiverId);
+    // const receiverSocketId = onlineUsers.get(data.receiverId);
+    const receiverSocketId = onlineUsers.get(data.receiverId.toString());
+
 
     // if (receiverSocketId) {
     //   this.server.to(receiverSocketId).emit('notification', {
@@ -195,8 +202,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // }
     // 🔔 Save request notification in DB
     await this.notificationService.create({
-      receiverId: data.receiverId,
-      senderId: data.senderId,
+     receiverId: new Types.ObjectId(data.receiverId),
+  senderId: new Types.ObjectId(data.senderId),
       type: 'REQUEST',
       message: 'sent you a connection request',
     });
@@ -214,12 +221,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   sendRequestNotification(senderId: string, receiverId: string) {
-    const receiverSocketId = onlineUsers.get(receiverId);
+    // const receiverSocketId = onlineUsers.get(receiverId);
+    const receiverSocketId = onlineUsers.get(receiverId.toString());
+
 
     // Save notification
     this.notificationService.create({
-      senderId,
-      receiverId,
+      receiverId: new Types.ObjectId(receiverId),
+  senderId: new Types.ObjectId(senderId),
       type: 'REQUEST',
       message: 'sent you a connection request',
     });

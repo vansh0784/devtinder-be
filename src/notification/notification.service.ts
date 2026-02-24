@@ -18,11 +18,25 @@ export class NotificationService {
   }
 
   async getUnread(userId: string) {
-    return this.notificationModel
-      .find({ receiverId: userId, read: false })
-      .sort({ createdAt: -1 })
-      .lean();
-  }
+  const list = await this.notificationModel
+    .find({ receiverId: userId, read: false })
+    .populate("senderId", "username avatar")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return list.map((n: any) => ({
+    _id: n._id,
+    type: n.type,
+    message: n.message,
+    roomId: n.roomId,
+    read: n.read,
+    createdAt: n.createdAt,
+
+    senderId: n.senderId?._id,
+    senderName: n.senderId?.username,
+    senderAvatar: n.senderId?.avatar,
+  }));
+}
 
   async markAsRead(id: string) {
     return this.notificationModel.findByIdAndUpdate(
