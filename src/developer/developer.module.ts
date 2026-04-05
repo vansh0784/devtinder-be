@@ -3,10 +3,7 @@ import { DeveloperController } from './developer.controller';
 import { DeveloperService } from './developer.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from 'src/common/entities/user.entity';
-import {
-    Connection,
-    ConnectionSchema,
-} from 'src/common/entities/connection.entity';
+import { Connection, ConnectionSchema } from 'src/common/entities/connection.entity';
 
 @Module({
     imports: [

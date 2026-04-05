@@ -1,9 +1,4 @@
-import {
-    BadRequestException,
-    NotFoundException,
-    Injectable,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Post } from 'src/common/entities/posts.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -23,13 +18,8 @@ export class PostService {
         private readonly s3Service: S3Service,
     ) {}
 
-    async createPost(
-        currentUserId: string,
-        dto: CreatePostDto,
-        file: Express.Multer.File,
-    ): Promise<BaseResponse> {
-        if (!currentUserId || !file || !dto)
-            throw new BadRequestException('Missing required fields');
+    async createPost(currentUserId: string, dto: CreatePostDto, file: Express.Multer.File): Promise<BaseResponse> {
+        if (!currentUserId || !file || !dto) throw new BadRequestException('Missing required fields');
 
         const user = await this.userModel.findById(currentUserId);
         if (!user) throw new BadRequestException('Invalid user');
@@ -58,11 +48,7 @@ export class PostService {
         };
     }
 
-    async getFeed(
-        currentUserId: string,
-        page: number = 1,
-        size: number = 10,
-    ): Promise<Post[]> {
+    async getFeed(currentUserId: string, page: number = 1, size: number = 10): Promise<Post[]> {
         if (!currentUserId) throw new BadRequestException('Missing user id');
 
         const skip = (page - 1) * size;
@@ -72,9 +58,7 @@ export class PostService {
         });
 
         const connectionList: string[] = userConnection.map((con) =>
-            con.userA?.toString() === currentUserId
-                ? con.userB.toString()
-                : con.userA.toString(),
+            con.userA?.toString() === currentUserId ? con.userB.toString() : con.userA.toString(),
         );
 
         let posts = await this.postModel
@@ -116,11 +100,7 @@ export class PostService {
         return posts;
     }
 
-    async getMyPosts(
-        currentUserId: string,
-        page: number = 1,
-        size: number = 10,
-    ): Promise<Post[]> {
+    async getMyPosts(currentUserId: string, page: number = 1, size: number = 10): Promise<Post[]> {
         if (!currentUserId) throw new BadRequestException('Missing user id');
         const skip = (page - 1) * size;
         return await this.postModel
@@ -133,11 +113,7 @@ export class PostService {
             .exec();
     }
 
-    async getPostsByUser(
-        userId: string,
-        page: number = 1,
-        size: number = 10,
-    ): Promise<Post[]> {
+    async getPostsByUser(userId: string, page: number = 1, size: number = 10): Promise<Post[]> {
         if (!userId) throw new BadRequestException('Profile id is not found');
         const skip = (page - 1) * size;
         return this.postModel
@@ -156,39 +132,24 @@ export class PostService {
         return await this.postModel.findById(postId);
     }
 
-    async updatePost(
-        postId: string,
-        currentUserId: string,
-        dto: UpdatePostDto,
-    ): Promise<BaseResponse> {
-        if (!postId || !currentUserId || !dto)
-            throw new BadRequestException('Missing required fields');
+    async updatePost(postId: string, currentUserId: string, dto: UpdatePostDto): Promise<BaseResponse> {
+        if (!postId || !currentUserId || !dto) throw new BadRequestException('Missing required fields');
         const post = await this.postModel.findById(postId);
-        if (!post)
-            throw new NotFoundException('Post is not found, invalid post id');
+        if (!post) throw new NotFoundException('Post is not found, invalid post id');
         if (post.author.toString() !== currentUserId)
-            throw new UnauthorizedException(
-                'Not authorized to update the post',
-            );
+            throw new UnauthorizedException('Not authorized to update the post');
 
         await this.postModel.findByIdAndUpdate(postId, dto);
 
         return { statusCode: 200, message: 'Post updated succesfully' };
     }
 
-    async deletePost(
-        postId: string,
-        currentUserId: string,
-    ): Promise<BaseResponse> {
-        if (!postId || !currentUserId)
-            throw new BadRequestException('Missing required fields');
+    async deletePost(postId: string, currentUserId: string): Promise<BaseResponse> {
+        if (!postId || !currentUserId) throw new BadRequestException('Missing required fields');
         const post = await this.postModel.findById(postId);
-        if (!post)
-            throw new NotFoundException('Post is not found, invalid post id');
+        if (!post) throw new NotFoundException('Post is not found, invalid post id');
         if (post.author.toString() !== currentUserId)
-            throw new UnauthorizedException(
-                'Not authorized to update the post',
-            );
+            throw new UnauthorizedException('Not authorized to update the post');
 
         if (post.images && post.images.length > 0) {
             for (const url of post.images) {
@@ -200,19 +161,12 @@ export class PostService {
         return { statusCode: 200, message: 'Post deleted succesfully' };
     }
 
-    async toggleLike(
-        postId: string,
-        currentUserId: string,
-    ): Promise<BaseResponse> {
-        if (!postId || !currentUserId)
-            throw new BadRequestException('Missing required fields');
+    async toggleLike(postId: string, currentUserId: string): Promise<BaseResponse> {
+        if (!postId || !currentUserId) throw new BadRequestException('Missing required fields');
 
         const post = await this.postModel.findById(postId);
-        if (!post)
-            throw new NotFoundException('Post is not found, invalid post id');
-        const hasLiked = post.likes.some(
-            (id) => id.toString() === currentUserId,
-        );
+        if (!post) throw new NotFoundException('Post is not found, invalid post id');
+        const hasLiked = post.likes.some((id) => id.toString() === currentUserId);
         if (hasLiked) {
             await this.postModel.findByIdAndUpdate(postId, {
                 $pull: {
@@ -232,17 +186,11 @@ export class PostService {
         };
     }
 
-    async addComment(
-        postId: string,
-        currentUserId: string,
-        comment: string,
-    ): Promise<BaseResponse> {
-        if (!postId || !currentUserId || !comment)
-            throw new BadRequestException('Missing required fields');
+    async addComment(postId: string, currentUserId: string, comment: string): Promise<BaseResponse> {
+        if (!postId || !currentUserId || !comment) throw new BadRequestException('Missing required fields');
 
         const post = await this.postModel.findById(postId);
-        if (!post)
-            throw new NotFoundException('Post is not found, invalid post id');
+        if (!post) throw new NotFoundException('Post is not found, invalid post id');
 
         await this.postModel.findByIdAndUpdate(postId, {
             $push: {
@@ -259,21 +207,13 @@ export class PostService {
         };
     }
 
-    async deleteComment(
-        postId: string,
-        commentId: string,
-        currentUserId: string,
-    ): Promise<BaseResponse> {
-        if (!postId || !currentUserId || !commentId)
-            throw new BadRequestException('Missing required fields');
+    async deleteComment(postId: string, commentId: string, currentUserId: string): Promise<BaseResponse> {
+        if (!postId || !currentUserId || !commentId) throw new BadRequestException('Missing required fields');
 
         const post = await this.postModel.findById(postId);
-        if (!post)
-            throw new NotFoundException('Post is not found, invalid post id');
+        if (!post) throw new NotFoundException('Post is not found, invalid post id');
         if (post.author.toString() !== currentUserId)
-            throw new UnauthorizedException(
-                'Not authorized to delete the post',
-            );
+            throw new UnauthorizedException('Not authorized to delete the post');
         await this.postModel.findByIdAndUpdate(postId, {
             $pull: {
                 comments: {

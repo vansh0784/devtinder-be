@@ -38,31 +38,19 @@ export class PostController {
     }
 
     @Get()
-    async getFeed(
-        @Req() req: { session: SessionDto },
-        @Query('page') page: string,
-        @Query('size') size: string,
-    ) {
+    async getFeed(@Req() req: { session: SessionDto }, @Query('page') page: string, @Query('size') size: string) {
         const currentUserId = req.session.user_id;
         return await this.postService.getFeed(currentUserId, +page, +size);
     }
 
     @Get('me')
-    async getMyPosts(
-        @Req() req: { session: SessionDto },
-        @Query('page') page: string,
-        @Query('size') size: string,
-    ) {
+    async getMyPosts(@Req() req: { session: SessionDto }, @Query('page') page: string, @Query('size') size: string) {
         const currentUserId = req.session.user_id;
         return await this.postService.getMyPosts(currentUserId, +page, +size);
     }
 
     @Get('user/:userId')
-    async getUserPosts(
-        @Param('userId') userId: string,
-        @Query('page') page: string,
-        @Query('size') size: string,
-    ) {
+    async getUserPosts(@Param('userId') userId: string, @Query('page') page: string, @Query('size') size: string) {
         return await this.postService.getPostsByUser(userId, +page, +size);
     }
 
@@ -82,19 +70,13 @@ export class PostController {
     }
 
     @Delete(':postId')
-    async deletePost(
-        @Param('postId') postId: string,
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async deletePost(@Param('postId') postId: string, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return await this.postService.deletePost(postId, currentUserId);
     }
 
     @Post(':postId/like')
-    async toggleLike(
-        @Param('postId') postId: string,
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async toggleLike(@Param('postId') postId: string, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return await this.postService.toggleLike(postId, currentUserId);
     }
@@ -106,11 +88,7 @@ export class PostController {
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        return await this.postService.addComment(
-            postId,
-            currentUserId,
-            comment,
-        );
+        return await this.postService.addComment(postId, currentUserId, comment);
     }
 
     @Delete(':postId/comment/:commentId')
@@ -120,11 +98,7 @@ export class PostController {
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        return await this.postService.deleteComment(
-            postId,
-            commentId,
-            currentUserId,
-        );
+        return await this.postService.deleteComment(postId, commentId, currentUserId);
     }
 
     // @Patch(':postId/pin')

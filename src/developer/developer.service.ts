@@ -17,11 +17,7 @@ export class DeveloperService {
         // private readonly configService: ConfigService,
     ) {}
 
-    async getAllDevs(
-        currentUserId: string,
-        page: number = 1,
-        limit: number = 10,
-    ): Promise<User[]> {
+    async getAllDevs(currentUserId: string, page: number = 1, limit: number = 10): Promise<User[]> {
         if (!currentUserId) throw new BadRequestException('Missing user id');
 
         const allConnection = await this.connectionModel.find({
@@ -29,9 +25,7 @@ export class DeveloperService {
         });
 
         const allConnectionId: string[] = allConnection.map((conn) =>
-            conn.userA.toString() === currentUserId
-                ? conn.userB.toString()
-                : conn.userA.toString(),
+            conn.userA.toString() === currentUserId ? conn.userB.toString() : conn.userA.toString(),
         );
 
         allConnectionId.push(currentUserId);
@@ -48,16 +42,12 @@ export class DeveloperService {
     }
 
     async getDevById(requestedId: string): Promise<User | null> {
-        if (!requestedId)
-            throw new BadRequestException('Requested id is missing');
+        if (!requestedId) throw new BadRequestException('Requested id is missing');
         const dev = await this.userModel.findById(requestedId);
         return dev;
     }
 
-    async updateDevProfile(
-        userId: string,
-        updateRequestDto: UpdateDevRequestDto,
-    ): Promise<User | null> {
+    async updateDevProfile(userId: string, updateRequestDto: UpdateDevRequestDto): Promise<User | null> {
         if (!userId) throw new BadRequestException('User id is missing');
         return await this.userModel.findByIdAndUpdate(userId, updateRequestDto);
     }
@@ -76,29 +66,19 @@ export class DeveloperService {
         return { statusCode: 200, message: 'Avatar Uploaded Successfully' };
     }
 
-    async searchUsers(
-        currentUserId: string,
-        name: string,
-    ): Promise<BaseResponse> {
-        if (!currentUserId || !name)
-            throw new BadRequestException('Missing required fields');
+    async searchUsers(currentUserId: string, name: string): Promise<BaseResponse> {
+        if (!currentUserId || !name) throw new BadRequestException('Missing required fields');
         const users = await this.userModel.find(
             {
                 _id: { $ne: currentUserId },
-                $or: [
-                    { firstName: { $regex: name, $options: 'i' } },
-                    { lastName: { $regex: name, $options: 'i' } },
-                ],
+                $or: [{ firstName: { $regex: name, $options: 'i' } }, { lastName: { $regex: name, $options: 'i' } }],
             },
             { password: 0 },
         );
 
         return {
             statusCode: 200,
-            message:
-                users.length > 0
-                    ? 'Users fetched successfully'
-                    : 'No users found with that name',
+            message: users.length > 0 ? 'Users fetched successfully' : 'No users found with that name',
             data: users,
         };
     }

@@ -1,9 +1,4 @@
-import {
-    CallHandler,
-    ExecutionContext,
-    Injectable,
-    NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Observable, map } from 'rxjs';
 import { sign, decode } from 'jsonwebtoken';
@@ -28,10 +23,8 @@ export class ResponseInterceptor implements NestInterceptor {
                     if (!payload) return data;
 
                     const { email, user_id } = payload;
-                    const secret_key =
-                        this.configService.get<string>('JWT_SECRET_KEY');
-                    if (!secret_key)
-                        throw new Error('JWT_SECRET_KEY is missing');
+                    const secret_key = this.configService.get<string>('JWT_SECRET_KEY');
+                    if (!secret_key) throw new Error('JWT_SECRET_KEY is missing');
                     response.cookie(
                         'access_token',
                         sign({ email, user_id }, secret_key),

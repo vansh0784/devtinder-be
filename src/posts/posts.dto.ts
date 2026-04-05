@@ -1,15 +1,14 @@
 import { IsString, IsOptional, IsArray, IsBoolean, IsEnum } from 'class-validator';
 
 export class CreatePostDto {
+    @IsString()
+    author!: string;
 
     @IsString()
-    author: string;
+    authorName!: string;
 
     @IsString()
-    authorName: string;
-
-    @IsString()
-    authorUsername: string;
+    authorUsername!: string;
 
     @IsString()
     @IsOptional()

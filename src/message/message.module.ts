@@ -7,12 +7,9 @@ import { ChatGateway } from '../common/socket.gateway';
 import { NotificationModule } from 'src/notification/notification.module';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]),
-    NotificationModule,
-  ],
-  providers: [MessagesService, ChatGateway],
-  controllers: [MessagesController],
-  exports: [MessagesService],
+    imports: [MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]), NotificationModule],
+    providers: [MessagesService, ChatGateway],
+    controllers: [MessagesController],
+    exports: [MessagesService],
 })
 export class MessagesModule {}

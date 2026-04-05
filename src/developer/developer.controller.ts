@@ -33,11 +33,7 @@ export class DeveloperController {
         @Query('limit') limit: string,
     ): Promise<User[]> {
         const currentUserId = req.session.user_id;
-        return await this.developerService.getAllDevs(
-            currentUserId,
-            +page,
-            +limit,
-        );
+        return await this.developerService.getAllDevs(currentUserId, +page, +limit);
     }
 
     @UseGuards(JwtAuthGuard)
@@ -53,10 +49,7 @@ export class DeveloperController {
         @Body() updateDevDto: UpdateDevRequestDto,
     ): Promise<{ message: string; data: User | null }> {
         const currentUserId = req.session.user_id;
-        const data = await this.developerService.updateDevProfile(
-            currentUserId,
-            updateDevDto,
-        );
+        const data = await this.developerService.updateDevProfile(currentUserId, updateDevDto);
         return {
             message: 'Developer profile updated successfully',
             data: data,
@@ -66,28 +59,20 @@ export class DeveloperController {
     @UseGuards(JwtAuthGuard)
     @Post('upload-avatar')
     @UseInterceptors(FileInterceptor('avatar'))
-    async uploadDevAvatar(
-        @UploadedFile() file: string,
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async uploadDevAvatar(@UploadedFile() file: string, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return await this.developerService.uploadDevAvatar(currentUserId, file);
     }
 
     @UseGuards(JwtAuthGuard)
     @Delete('')
-    async deleteDevAccount(
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async deleteDevAccount(@Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return await this.developerService.deleteDevAccount(currentUserId);
     }
     @UseGuards(JwtAuthGuard)
     @Post('search')
-    async searchUsers(
-        @Query('name') name: string,
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async searchUsers(@Query('name') name: string, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return this.developerService.searchUsers(currentUserId, name);
     }
