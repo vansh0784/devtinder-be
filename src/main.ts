@@ -1,8 +1,8 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ResponseInterceptor } from './common/response.interceptor';
+import {NestFactory} from '@nestjs/core';
+import {AppModule} from './app.module';
+import {ConfigService} from '@nestjs/config';
+import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
+import {ResponseInterceptor} from './common/response.interceptor';
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const configService = app.get(ConfigService);
@@ -10,7 +10,7 @@ async function bootstrap() {
         origin: [
             'http://localhost:5173',
             'http://localhost:3000',
-            "http://localhost:5174",
+            'http://localhost:5174',
             'https://devtinder-fe-sigma.vercel.app',
         ],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -20,9 +20,7 @@ async function bootstrap() {
     app.useGlobalInterceptors(new ResponseInterceptor(configService));
     const config = new DocumentBuilder()
         .setTitle('DevTinder-API Docs')
-        .setDescription(
-            'DevTinder - application where developers can connect and code as well!!',
-        )
+        .setDescription('DevTinder - application where developers can connect and code as well!!')
         .setVersion('1.0.0')
         .build();
     const document = SwaggerModule.createDocument(app, config);
