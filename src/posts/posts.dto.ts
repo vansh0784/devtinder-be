@@ -2,13 +2,13 @@ import { IsString, IsOptional, IsArray, IsBoolean, IsEnum } from 'class-validato
 
 export class CreatePostDto {
     @IsString()
-    author!: string;
+    author: string;
 
     @IsString()
-    authorName!: string;
+    authorName: string;
 
     @IsString()
-    authorUsername!: string;
+    authorUsername: string;
 
     @IsString()
     @IsOptional()

@@ -33,5 +33,4 @@ export class Connection extends Document {
     status: ConnectionStatus;
 }
 
-export const ConnectionSchema =
-    SchemaFactory.createForClass(Connection);
+export const ConnectionSchema = SchemaFactory.createForClass(Connection);
