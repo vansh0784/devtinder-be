@@ -12,10 +12,10 @@ import {
     UseInterceptors,
     UploadedFile,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/common/jwt.guard';
+import { JwtAuthGuard } from '../common/jwt.guard';
 import { PostService } from './posts.service';
 import { CreatePostDto, UpdatePostDto } from './posts.dto';
-import { BaseResponse, SessionDto } from 'src/common/dto';
+import { BaseResponse, SessionDto } from '../common/dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 

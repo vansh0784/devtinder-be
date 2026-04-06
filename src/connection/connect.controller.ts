@@ -1,11 +1,11 @@
 // import { Controller, Get, Post, Req, Param, UseGuards } from '@nestjs/common';
 // import { ConnectionService } from './connect.service';
-// import { BaseResponse } from 'src/common/dto';
-// import { User } from 'src/common/entities/user.entity';
-// import { Connection } from 'src/common/entities/connection.entity';
-// import { JwtAuthGuard } from 'src/common/jwt.guard';
+// import { BaseResponse } from '../common/dto';
+// import { User } from '../common/entities/user.entity';
+// import { Connection } from '../common/entities/connection.entity';
+// import { JwtAuthGuard } from '../common/jwt.guard';
 // import { ApiTags } from '@nestjs/swagger';
-// import { SessionDto } from 'src/common/dto';
+// import { SessionDto } from '../common/dto';
 
 // @Controller('connection')
 // @ApiTags('Connection')
@@ -69,42 +69,29 @@
 //     }
 // }
 
-import {
-    Controller,
-    Get,
-    Post,
-    Req,
-    Body,
-    UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Req, Body, UseGuards } from '@nestjs/common';
 import { ConnectionService } from './connect.service';
-import { BaseResponse } from 'src/common/dto';
-import { User } from 'src/common/entities/user.entity';
-import { Connection } from 'src/common/entities/connection.entity';
-import { JwtAuthGuard } from 'src/common/jwt.guard';
+import { BaseResponse } from '../common/dto';
+import { User } from '../common/entities/user.entity';
+import { Connection } from '../common/entities/connection.entity';
+import { JwtAuthGuard } from '../common/jwt.guard';
 import { ApiTags } from '@nestjs/swagger';
-import { SessionDto } from 'src/common/dto';
+import { SessionDto } from '../common/dto';
 // import { ChatGateway } from 'src/common/socket.gateway';
 
 @Controller('connection')
 @ApiTags('Connection')
 export class ConnectionController {
-    constructor(private readonly connectService: ConnectionService,) { }
+    constructor(private readonly connectService: ConnectionService) {}
 
     // =========================
     // RIGHT SWIPE
     // =========================
     @UseGuards(JwtAuthGuard)
     @Post('right')
-    async interested(
-        @Body() body: { recieverId: string },
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async interested(@Body() body: { recieverId: string }, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        const response = await this.connectService.interested(
-            currentUserId,
-            body.recieverId,
-        );
+        const response = await this.connectService.interested(currentUserId, body.recieverId);
         // this.chatGateway.sendRequestNotification(
         //     currentUserId,
         //     body.recieverId,
@@ -123,10 +110,7 @@ export class ConnectionController {
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        return this.connectService.notInterested(
-            currentUserId,
-            body.recieverId,
-        );
+        return this.connectService.notInterested(currentUserId, body.recieverId);
     }
 
     // =========================
@@ -139,10 +123,7 @@ export class ConnectionController {
         @Req() req: { session: SessionDto },
     ): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        return this.connectService.acceptRequest(
-            body?.requestId,
-            currentUserId,
-        );
+        return this.connectService.acceptRequest(body?.requestId, currentUserId);
     }
 
     // =========================
@@ -163,9 +144,7 @@ export class ConnectionController {
     // =========================
     @UseGuards(JwtAuthGuard)
     @Get('requests')
-    async getPendingRequest(
-        @Req() req: { session: SessionDto },
-    ): Promise<Connection[]> {
+    async getPendingRequest(@Req() req: { session: SessionDto }): Promise<Connection[]> {
         const currentUserId = req.session.user_id;
         return this.connectService.getPendingRequest(currentUserId);
     }

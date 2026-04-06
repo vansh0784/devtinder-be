@@ -1,12 +1,12 @@
 import { BadRequestException, NotFoundException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { Post } from 'src/common/entities/posts.entity';
+import { Post } from '../common/entities/posts.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreatePostDto, UpdatePostDto } from './posts.dto';
-import { S3Service } from 'src/common/aws/s3Service';
-import { BaseResponse } from 'src/common/dto';
-import { Connection } from 'src/common/entities/connection.entity';
-import { User } from 'src/common/entities/user.entity';
+import { S3Service } from '../common/aws/s3Service';
+import { BaseResponse } from '../common/dto';
+import { Connection } from '../common/entities/connection.entity';
+import { User } from '../common/entities/user.entity';
 
 @Injectable()
 export class PostService {

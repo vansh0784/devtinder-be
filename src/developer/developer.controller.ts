@@ -14,9 +14,9 @@ import {
 } from '@nestjs/common';
 import { DeveloperService } from './developer.service';
 import { ApiTags } from '@nestjs/swagger';
-import { User } from 'src/common/entities/user.entity';
-import { JwtAuthGuard } from 'src/common/jwt.guard';
-import { BaseResponse, SessionDto } from 'src/common/dto';
+import { User } from '../common/entities/user.entity';
+import { JwtAuthGuard } from '../common/jwt.guard';
+import { BaseResponse, SessionDto } from '../common/dto';
 import { UpdateDevRequestDto } from './developer.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 

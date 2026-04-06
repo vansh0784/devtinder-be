@@ -2,11 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 // import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { raceWith } from 'rxjs';
-import { Connection } from 'src/common/entities/connection.entity';
-import { User } from 'src/common/entities/user.entity';
+import { Connection } from '../common/entities/connection.entity';
+import { User } from '../common/entities/user.entity';
 import { UpdateDevRequestDto } from './developer.dto';
-import { BaseResponse } from 'src/common/dto';
+import { BaseResponse } from '../common/dto';
 
 @Injectable()
 export class DeveloperService {
