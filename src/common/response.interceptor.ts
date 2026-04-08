@@ -25,11 +25,11 @@ export class ResponseInterceptor implements NestInterceptor {
                     const { email, user_id } = payload;
                     const secret_key = this.configService.get<string>('JWT_SECRET_KEY');
                     if (!secret_key) throw new Error('JWT_SECRET_KEY is missing');
-                    response.cookie(
-                        'access_token',
-                        sign({ email, user_id }, secret_key),
-                        { httpOnly: true, secure: true, maxAge: 120000 }, // match JWT
-                    );
+                    response.cookie('access_token', sign({ email, user_id }, secret_key), {
+                        httpOnly: true,
+                        secure: true,
+                        maxAge: 120000,
+                    });
                 }
                 return data;
             }),
@@ -37,7 +37,7 @@ export class ResponseInterceptor implements NestInterceptor {
     }
 
     private extractTokenFromHeader(request: Request): string | undefined {
-        const [type, token] = request.headers.authorization?.split(' ') ?? [];
+        const [type, token] = request?.headers?.authorization?.split(' ') ?? [];
         return type === 'Bearer' ? token : undefined;
     }
 }

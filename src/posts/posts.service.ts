@@ -57,9 +57,7 @@ export class PostService {
             $or: [{ userA: currentUserId }, { userB: currentUserId }],
         });
 
-        const connectionList: string[] = userConnection.map((con) =>
-            con.userA?.toString() === currentUserId ? con.userB.toString() : con.userA.toString(),
-        );
+        const connectionList: string[] = userConnection.map((con) => (con.userA?.toString() === currentUserId ? con.userB.toString() : con.userA.toString()));
 
         let posts = await this.postModel
             .find({
@@ -103,27 +101,13 @@ export class PostService {
     async getMyPosts(currentUserId: string, page: number = 1, size: number = 10): Promise<Post[]> {
         if (!currentUserId) throw new BadRequestException('Missing user id');
         const skip = (page - 1) * size;
-        return await this.postModel
-            .find({ author: currentUserId })
-            .skip(skip)
-            .limit(size)
-            .sort({ createdAt: -1 })
-            .select('author images text code likes comment tags')
-            .populate('author', 'username avatar')
-            .exec();
+        return await this.postModel.find({ author: currentUserId }).skip(skip).limit(size).sort({ createdAt: -1 }).select('author images text code likes comment tags').populate('author', 'username avatar').exec();
     }
 
     async getPostsByUser(userId: string, page: number = 1, size: number = 10): Promise<Post[]> {
         if (!userId) throw new BadRequestException('Profile id is not found');
         const skip = (page - 1) * size;
-        return this.postModel
-            .find({ author: userId })
-            .skip(skip)
-            .limit(size)
-            .sort({ createdAt: -1 })
-            .select('author images text code likes comment tags')
-            .populate('author', 'username avatar')
-            .exec();
+        return this.postModel.find({ author: userId }).skip(skip).limit(size).sort({ createdAt: -1 }).select('author images text code likes comment tags').populate('author', 'username avatar').exec();
     }
 
     async getPostById(postId: string): Promise<Post | null> {
@@ -136,8 +120,7 @@ export class PostService {
         if (!postId || !currentUserId || !dto) throw new BadRequestException('Missing required fields');
         const post = await this.postModel.findById(postId);
         if (!post) throw new NotFoundException('Post is not found, invalid post id');
-        if (post.author.toString() !== currentUserId)
-            throw new UnauthorizedException('Not authorized to update the post');
+        if (post.author.toString() !== currentUserId) throw new UnauthorizedException('Not authorized to update the post');
 
         await this.postModel.findByIdAndUpdate(postId, dto);
 
@@ -148,8 +131,7 @@ export class PostService {
         if (!postId || !currentUserId) throw new BadRequestException('Missing required fields');
         const post = await this.postModel.findById(postId);
         if (!post) throw new NotFoundException('Post is not found, invalid post id');
-        if (post.author.toString() !== currentUserId)
-            throw new UnauthorizedException('Not authorized to update the post');
+        if (post.author.toString() !== currentUserId) throw new UnauthorizedException('Not authorized to update the post');
 
         if (post.images && post.images.length > 0) {
             for (const url of post.images) {
@@ -188,7 +170,6 @@ export class PostService {
 
     async addComment(postId: string, currentUserId: string, comment: string): Promise<BaseResponse> {
         if (!postId || !currentUserId || !comment) throw new BadRequestException('Missing required fields');
-
         const post = await this.postModel.findById(postId);
         if (!post) throw new NotFoundException('Post is not found, invalid post id');
 
@@ -212,8 +193,7 @@ export class PostService {
 
         const post = await this.postModel.findById(postId);
         if (!post) throw new NotFoundException('Post is not found, invalid post id');
-        if (post.author.toString() !== currentUserId)
-            throw new UnauthorizedException('Not authorized to delete the post');
+        if (post.author.toString() !== currentUserId) throw new UnauthorizedException('Not authorized to delete the post');
         await this.postModel.findByIdAndUpdate(postId, {
             $pull: {
                 comments: {

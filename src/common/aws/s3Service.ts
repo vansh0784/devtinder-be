@@ -30,7 +30,7 @@ export class S3Service {
             Key: fileKey,
             Body: file.buffer,
             ContentType: file.mimetype,
-            ContentDisposition: 'inline',
+            ContentDisposition: 'inline', // it opens the image over the browser
         };
         try {
             await this.s3Client.send(new PutObjectCommand(uploadParams));

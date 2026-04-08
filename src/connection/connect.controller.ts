@@ -1,74 +1,3 @@
-// import { Controller, Get, Post, Req, Param, UseGuards } from '@nestjs/common';
-// import { ConnectionService } from './connect.service';
-// import { BaseResponse } from '../common/dto';
-// import { User } from '../common/entities/user.entity';
-// import { Connection } from '../common/entities/connection.entity';
-// import { JwtAuthGuard } from '../common/jwt.guard';
-// import { ApiTags } from '@nestjs/swagger';
-// import { SessionDto } from '../common/dto';
-
-// @Controller('connection')
-// @ApiTags('Connection')
-// export class ConnectionController {
-//     constructor(private readonly connectService: ConnectionService) {}
-
-//     @UseGuards(JwtAuthGuard)
-//     @Post('send')
-//     async interested(
-//         @Param('recieverId') recieverId: string,
-//         @Req() req: { session: SessionDto },
-//     ): Promise<BaseResponse> {
-//         const currentUserId = req.session.user_id;
-//         return this.connectService.interested(currentUserId, recieverId);
-//     }
-
-//     @UseGuards(JwtAuthGuard)
-//     @Post('send')
-//     async notInterested(
-//         @Param('recieverId') recieverId: string,
-//         @Req() req: { session: SessionDto },
-//     ): Promise<BaseResponse> {
-//         const currentUserId = req.session.user_id;
-//         return this.connectService.notInterested(currentUserId, recieverId);
-//     }
-
-//     @UseGuards(JwtAuthGuard)
-//     @Post('accepted/:requestId')
-//     async acceptRequest(
-//         @Param('requestId') requestId: string,
-//         @Req() req: { session: SessionDto },
-//     ): Promise<BaseResponse> {
-//         const currentUserId = req.session.user_id;
-//         return this.connectService.acceptRequest(requestId, currentUserId);
-//     }
-
-//     @UseGuards(JwtAuthGuard)
-//     @Post('rejected/:requestId')
-//     async rejectRequest(
-//         @Param('requestId') requestId: string,
-//         @Req() req: { session: SessionDto },
-//     ): Promise<BaseResponse> {
-//         const currentUserId = req.session.user_id;
-//         return this.connectService.rejectRequest(requestId, currentUserId);
-//     }
-
-//     @UseGuards(JwtAuthGuard)
-//     @Get('requests')
-//     async getPendingRequest(
-//         @Req() req: { session: SessionDto },
-//     ): Promise<Connection[]> {
-//         const currentUserId = req.session.user_id;
-//         return this.connectService.getPendingRequest(currentUserId);
-//     }
-
-//     @UseGuards(JwtAuthGuard)
-//     @Get('friends')
-//     async allFriends(@Req() req: { session: SessionDto }): Promise<User[]> {
-//         const currentUserId = req.session.user_id;
-//         return this.connectService.allFriends(currentUserId);
-//     }
-// }
-
 import { Controller, Get, Post, Req, Body, UseGuards } from '@nestjs/common';
 import { ConnectionService } from './connect.service';
 import { BaseResponse } from '../common/dto';
@@ -77,82 +6,49 @@ import { Connection } from '../common/entities/connection.entity';
 import { JwtAuthGuard } from '../common/jwt.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { SessionDto } from '../common/dto';
-// import { ChatGateway } from 'src/common/socket.gateway';
+import { SocketGateway } from '../common/socket.gateway';
 
+@UseGuards(JwtAuthGuard)
 @Controller('connection')
 @ApiTags('Connection')
 export class ConnectionController {
-    constructor(private readonly connectService: ConnectionService) {}
+    constructor(
+        private readonly connectService: ConnectionService,
+        private readonly SocketGateway: SocketGateway,
+    ) {}
 
-    // =========================
-    // RIGHT SWIPE
-    // =========================
-    @UseGuards(JwtAuthGuard)
     @Post('right')
     async interested(@Body() body: { recieverId: string }, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         const response = await this.connectService.interested(currentUserId, body.recieverId);
-        // this.chatGateway.sendRequestNotification(
-        //     currentUserId,
-        //     body.recieverId,
-        // );
-
+        this.SocketGateway.handleSendNotification(currentUserId, body.recieverId, 'request');
         return response;
     }
 
-    // =========================
-    // LEFT SWIPE
-    // =========================
-    @UseGuards(JwtAuthGuard)
     @Post('left')
-    async notInterested(
-        @Body() body: { recieverId: string },
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async notInterested(@Body() body: { recieverId: string }, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return this.connectService.notInterested(currentUserId, body.recieverId);
     }
 
-    // =========================
-    // ACCEPT REQUEST (OPTIONAL)
-    // =========================
-    @UseGuards(JwtAuthGuard)
     @Post('accept')
-    async acceptRequest(
-        @Body() body: { requestId: string },
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async acceptRequest(@Body() body: { requestId: string }, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return this.connectService.acceptRequest(body?.requestId, currentUserId);
     }
 
-    // =========================
-    // REJECT REQUEST
-    // =========================
-    @UseGuards(JwtAuthGuard)
     @Post('reject')
-    async rejectRequest(
-        @Body() body: { requestId: string },
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async rejectRequest(@Body() body: { requestId: string }, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return this.connectService.rejectRequest(body.requestId, currentUserId);
     }
 
-    // =========================
-    // WHO LIKED ME
-    // =========================
-    @UseGuards(JwtAuthGuard)
     @Get('requests')
     async getPendingRequest(@Req() req: { session: SessionDto }): Promise<Connection[]> {
         const currentUserId = req.session.user_id;
         return this.connectService.getPendingRequest(currentUserId);
     }
 
-    // =========================
-    // MY MATCHES
-    // =========================
-    @UseGuards(JwtAuthGuard)
     @Get('matches')
     async allFriends(@Req() req: { session: SessionDto }): Promise<User[]> {
         const currentUserId = req.session.user_id;

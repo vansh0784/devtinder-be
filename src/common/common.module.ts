@@ -1,11 +1,13 @@
-import {Module, Global} from '@nestjs/common';
-import {ConfigModule, ConfigService} from '@nestjs/config';
-import {MongooseModule} from '@nestjs/mongoose';
+import { Module, Global } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { SocketModule } from './socket.gateway.module';
 
 @Global()
 @Module({
     imports: [
-        ConfigModule.forRoot({isGlobal: true}),
+        SocketModule,
+        ConfigModule.forRoot({ isGlobal: true }),
         MongooseModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -14,5 +16,6 @@ import {MongooseModule} from '@nestjs/mongoose';
             }),
         }),
     ],
+    exports: [SocketModule],
 })
 export class CommonModule {}

@@ -170,10 +170,7 @@ export class ConnectionService {
             reverseConnection.status = ConnectionStatus.ACCEPTED;
             await reverseConnection.save();
 
-            return {
-                statusCode: 200,
-                message: "It's a Match 🎉",
-            };
+            return { statusCode: 200, message: "It's a Match 🎉" };
         }
 
         // ❌ Prevent duplicate swipe / connection
@@ -195,10 +192,7 @@ export class ConnectionService {
             status: ConnectionStatus.PENDING,
         });
 
-        return {
-            statusCode: 200,
-            message: 'Right swipe sent successfully 👍',
-        };
+        return { statusCode: 200, message: 'Right swipe sent successfully 👍' };
     }
 
     async notInterested(senderId: string, receiverId: string): Promise<BaseResponse> {
@@ -223,10 +217,7 @@ export class ConnectionService {
             status: ConnectionStatus.REJECTED,
         });
 
-        return {
-            statusCode: 200,
-            message: 'Left swipe recorded 👎',
-        };
+        return { statusCode: 200, message: 'Left swipe recorded 👎' };
     }
 
     async acceptRequest(requestId: string, currentUserId: string): Promise<BaseResponse> {
@@ -247,10 +238,7 @@ export class ConnectionService {
         connectionRequest.status = ConnectionStatus.ACCEPTED;
         await connectionRequest.save();
 
-        return {
-            statusCode: 200,
-            message: 'Request accepted successfully!!',
-        };
+        return { statusCode: 200, message: 'Request accepted successfully!!' };
     }
 
     async rejectRequest(requestId: string, currentUserId: string): Promise<BaseResponse> {
@@ -271,10 +259,7 @@ export class ConnectionService {
         connectionRequest.status = ConnectionStatus.REJECTED;
         await connectionRequest.save();
 
-        return {
-            statusCode: 200,
-            message: 'Request rejected successfully!!',
-        };
+        return { statusCode: 200, message: 'Request rejected successfully!!' };
     }
 
     async getPendingRequest(userId: string): Promise<Connection[]> {
@@ -282,12 +267,7 @@ export class ConnectionService {
             throw new BadRequestException('Missing user id');
         }
 
-        return this.connectModel
-            .find({
-                userB: userId,
-                status: ConnectionStatus.PENDING,
-            })
-            .populate('userA', 'firstName lastName email phone age');
+        return this.connectModel.find({ userB: userId, status: ConnectionStatus.PENDING }).populate('userA', 'firstName lastName email phone age');
     }
 
     async allFriends(userId: string): Promise<any[]> {
@@ -295,17 +275,11 @@ export class ConnectionService {
             throw new BadRequestException('Missing user id');
         }
 
-        const friends = await this.connectModel
-            .find({
-                status: ConnectionStatus.ACCEPTED,
-                $or: [{ userA: userId }, { userB: userId }],
-            })
-            .populate('userA userB', '_id username email phone');
+        const friends = await this.connectModel.find({ status: ConnectionStatus.ACCEPTED, $or: [{ userA: userId }, { userB: userId }] }).populate('userA userB', '_id username email phone');
 
         return friends.map((conn) => {
             const userA: any = conn.userA;
             const userB: any = conn.userB;
-
             return userA._id.toString() === userId ? userB : userA;
         });
     }

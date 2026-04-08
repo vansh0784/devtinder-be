@@ -42,23 +42,15 @@ export class MessagesService {
         private readonly messageModel: Model<MessageDocument>,
     ) {}
 
-    // 📩 Save message
     async create(dto: CreateMessageDto) {
         const message = await this.messageModel.create(dto);
         return message.toObject();
     }
 
-    // 📜 Fetch chat history by room
     async findByRoom(roomId: string, limit = 50) {
-        return this.messageModel
-            .find({ roomId })
-            .sort({ createdAt: 1 }) // OLDEST → NEWEST (chat order)
-            .limit(limit)
-            .lean()
-            .exec();
+        return this.messageModel.find({ roomId }).sort({ createdAt: 1 }).limit(limit).lean().exec();
     }
 
-    // 👀 Mark message as read
     async markAsRead(messageId: string) {
         return this.messageModel.findByIdAndUpdate(messageId, { read: true }, { new: true });
     }
