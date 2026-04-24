@@ -8,6 +8,7 @@ import { MessagesModule } from './message/message.module';
 import { PostModule } from './posts/posts.module';
 import { DeveloperModule } from './developer/developer.module';
 import { NotificationModule } from './notification/notification.module';
+import { CollaborationModule } from './collaboration/collaboration.module';
 import { MulterModule } from '@nestjs/platform-express';
 import multer from 'multer';
 
@@ -20,6 +21,7 @@ import multer from 'multer';
         DeveloperModule,
         MessagesModule,
         NotificationModule,
+        CollaborationModule,
         MulterModule.register({
             storage: multer.memoryStorage(),
         }),

@@ -1,17 +1,4 @@
-import {
-    Controller,
-    Post,
-    Get,
-    Patch,
-    Delete,
-    Param,
-    Body,
-    Query,
-    Req,
-    UseGuards,
-    UseInterceptors,
-    UploadedFile,
-} from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Param, Body, Query, Req, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/jwt.guard';
 import { PostService } from './posts.service';
 import { CreatePostDto, UpdatePostDto } from './posts.dto';
@@ -27,11 +14,7 @@ export class PostController {
 
     @Post()
     @UseInterceptors(FileInterceptor('image'))
-    async createPost(
-        @Body() dto: CreatePostDto,
-        @UploadedFile() file: Express.Multer.File,
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async createPost(@Body() dto: CreatePostDto, @UploadedFile() file: Express.Multer.File, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         console.log('file', file);
         return await this.postService.createPost(currentUserId, dto, file);
@@ -60,11 +43,7 @@ export class PostController {
     }
 
     @Patch(':postId')
-    async updatePost(
-        @Param('postId') postId: string,
-        @Body() dto: UpdatePostDto,
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async updatePost(@Param('postId') postId: string, @Body() dto: UpdatePostDto, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return await this.postService.updatePost(postId, currentUserId, dto);
     }
@@ -82,21 +61,13 @@ export class PostController {
     }
 
     @Post(':postId/comment')
-    async addComment(
-        @Param('postId') postId: string,
-        @Body('comment') comment: string,
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async addComment(@Param('postId') postId: string, @Body('comment') comment: string, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return await this.postService.addComment(postId, currentUserId, comment);
     }
 
     @Delete(':postId/comment/:commentId')
-    async deleteComment(
-        @Param('postId') postId: string,
-        @Param('commentId') commentId: string,
-        @Req() req: { session: SessionDto },
-    ): Promise<BaseResponse> {
+    async deleteComment(@Param('postId') postId: string, @Param('commentId') commentId: string, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return await this.postService.deleteComment(postId, commentId, currentUserId);
     }
