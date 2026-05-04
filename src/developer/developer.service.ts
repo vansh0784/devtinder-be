@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 // import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Connection } from '../common/entities/connection.entity';
 import { User } from '../common/entities/user.entity';
 import { UpdateDevRequestDto } from './developer.dto';
@@ -17,27 +17,42 @@ export class DeveloperService {
     ) {}
 
     async getAllDevs(currentUserId: string, page: number = 1, limit: number = 10): Promise<User[]> {
-        if (!currentUserId) throw new BadRequestException('Missing user id');
+        const me = String(currentUserId ?? '').trim();
+        if (!me || !Types.ObjectId.isValid(me)) {
+            throw new BadRequestException('Missing or invalid user id');
+        }
+
+        const meOid = new Types.ObjectId(me);
 
         const allConnection = await this.connectionModel.find({
-            $or: [{ userA: currentUserId }, { userB: currentUserId }],
+            $or: [{ userA: meOid }, { userB: meOid }],
         });
 
-        const allConnectionId: string[] = allConnection.map((conn) =>
-            conn.userA.toString() === currentUserId ? conn.userB.toString() : conn.userA.toString(),
-        );
+        const excludeIds: Types.ObjectId[] = [meOid];
+        for (const conn of allConnection) {
+            const a = conn.userA as Types.ObjectId;
+            const b = conn.userB as Types.ObjectId;
+            const other = a.equals(meOid) ? b : a;
+            if (!excludeIds.some((id) => id.equals(other))) {
+                excludeIds.push(other);
+            }
+        }
 
-        allConnectionId.push(currentUserId);
-        const skip = (page - 1) * limit;
+        const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+        const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(Math.floor(limit), 100) : 20;
+        const skip = (safePage - 1) * safeLimit;
+
         const feedUsers = await this.userModel
             .find({
-                _id: { $nin: allConnectionId },
+                _id: { $nin: excludeIds },
             })
+            .select('-password')
             .skip(skip)
-            .limit(limit)
+            .limit(safeLimit)
+            .lean()
             .exec();
 
-        return feedUsers;
+        return feedUsers as unknown as User[];
     }
 
     async getDevById(requestedId: string): Promise<User | null> {

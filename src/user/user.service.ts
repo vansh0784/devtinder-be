@@ -22,8 +22,17 @@ export class UserService {
         });
         if (existing_user) throw new ConflictException('Email already existed');
         const hash_password = await hash(dto.password, 10);
-        await this.userModel.create({ ...dto, password: hash_password });
-        return { statusCode: 200, message: 'User Registered Successfully' };
+        const created = await this.userModel.create({ ...dto, password: hash_password });
+        const jwtSecret = this.configService.get<string>('JWT_SECRET_KEY');
+        if (!jwtSecret) {
+            throw new Error('JWT_SECRET_KEY is not defined in environment variables');
+        }
+        const token = sign({ email: created.email, user_id: created.id }, jwtSecret);
+        return {
+            statusCode: 200,
+            message: 'User Registered Successfully',
+            access_token: token,
+        };
     }
 
     async login({ email, password }: { email: string; password: string }): Promise<BaseResponse> {

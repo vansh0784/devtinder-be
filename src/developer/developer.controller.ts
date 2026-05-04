@@ -29,11 +29,13 @@ export class DeveloperController {
     @Get()
     async getAllDevs(
         @Req() req: { session: SessionDto },
-        @Query('page') page: string,
-        @Query('limit') limit: string,
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
     ): Promise<User[]> {
         const currentUserId = req.session.user_id;
-        return await this.developerService.getAllDevs(currentUserId, +page, +limit);
+        const pageNum = Math.max(1, Number.parseInt(page ?? '1', 10) || 1);
+        const limitNum = Math.min(100, Math.max(1, Number.parseInt(limit ?? '50', 10) || 50));
+        return await this.developerService.getAllDevs(currentUserId, pageNum, limitNum);
     }
 
     @UseGuards(JwtAuthGuard)

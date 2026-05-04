@@ -6,23 +6,17 @@ import { Connection } from '../common/entities/connection.entity';
 import { JwtAuthGuard } from '../common/jwt.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { SessionDto } from '../common/dto';
-import { SocketGateway } from '../common/socket.gateway';
 
 @UseGuards(JwtAuthGuard)
 @Controller('connection')
 @ApiTags('Connection')
 export class ConnectionController {
-    constructor(
-        private readonly connectService: ConnectionService,
-        private readonly SocketGateway: SocketGateway,
-    ) {}
+    constructor(private readonly connectService: ConnectionService) {}
 
     @Post('right')
     async interested(@Body() body: { recieverId: string }, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        const response = await this.connectService.interested(currentUserId, body.recieverId);
-        this.SocketGateway.handleSendNotification(currentUserId, body.recieverId, 'request');
-        return response;
+        return this.connectService.interested(currentUserId, body.recieverId);
     }
 
     @Post('left')

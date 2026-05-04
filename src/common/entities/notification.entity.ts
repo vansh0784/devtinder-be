@@ -12,8 +12,11 @@ export class Notification {
     @Prop({ type: Types.ObjectId, ref: User.name, required: true })
     senderId: Types.ObjectId;
 
-    @Prop({ required: true, enum: ['REQUEST', 'MESSAGE'] })
-    type: 'REQUEST' | 'MESSAGE';
+    @Prop({
+        required: true,
+        enum: ['REQUEST', 'MESSAGE', 'MATCH', 'REQUEST_ACCEPTED', 'REQUEST_REJECTED'],
+    })
+    type: 'REQUEST' | 'MESSAGE' | 'MATCH' | 'REQUEST_ACCEPTED' | 'REQUEST_REJECTED';
 
     @Prop()
     roomId?: string;

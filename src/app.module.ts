@@ -11,6 +11,7 @@ import { NotificationModule } from './notification/notification.module';
 import { CollaborationModule } from './collaboration/collaboration.module';
 import { MulterModule } from '@nestjs/platform-express';
 import multer from 'multer';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import multer from 'multer';
         MessagesModule,
         NotificationModule,
         CollaborationModule,
+        SeedModule,
         MulterModule.register({
             storage: multer.memoryStorage(),
         }),
