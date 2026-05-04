@@ -1,8 +1,11 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { JwtAuthGuard } from '../common/jwt.guard';
+import type { BaseResponse, SessionDto } from '../common/dto';
+import { CollaborationInviteService } from './collaboration-invite.service';
 import { CollaborationRoomService } from './collaboration-room.service';
-import { CreateCollabRoomDto } from './collaboration.dto';
+import { CreateCollabRoomDto, InviteCollaborationDto } from './collaboration.dto';
 
 @ApiTags('Collaboration')
 @Controller('collaboration')
@@ -10,7 +13,20 @@ export class CollaborationController {
     constructor(
         private readonly rooms: CollaborationRoomService,
         private readonly config: ConfigService,
+        private readonly invites: CollaborationInviteService,
     ) {}
+
+    @Post('invite')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({
+        summary: 'Notify a matched connection to join your Live Collaboration session',
+    })
+    @ApiBody({ type: InviteCollaborationDto })
+    @ApiOkResponse({ description: 'Push notification persisted and emitted via socket when online' })
+    async inviteCollaborator(@Body() dto: InviteCollaborationDto, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
+        return this.invites.sendInvite(req.session.user_id, dto.roomId, dto.receiverId);
+    }
 
     @Post('rooms')
     @ApiOperation({ summary: 'Create a shared code session (CRDT doc name + OT seed)' })

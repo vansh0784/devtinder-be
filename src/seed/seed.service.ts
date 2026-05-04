@@ -318,8 +318,13 @@ export class SeedService {
             { userA: u[5].id, userB: u[6].id, status: ConnectionStatus.REJECTED },
         ];
 
-        await this.connectionModel.insertMany(connectionsPayload);
+        const createdConns = await this.connectionModel.insertMany(connectionsPayload);
         const connectionsCreated = connectionsPayload.length;
+        const pendingRequestIds = {
+            conn02: createdConns[2]._id,
+            conn13: createdConns[3]._id,
+            conn46: createdConns[4]._id,
+        };
 
         const r01 = roomIdFor(u[0].idStr, u[1].idStr);
         await this.messageModel.insertMany([
@@ -361,6 +366,7 @@ export class SeedService {
                 type: 'REQUEST',
                 message: `${u[0].username} sent you a connection request`,
                 read: false,
+                connectionRequestId: pendingRequestIds.conn02,
             },
             {
                 receiverId: u[3].id,
@@ -368,6 +374,7 @@ export class SeedService {
                 type: 'REQUEST',
                 message: `${u[1].username} sent you a connection request`,
                 read: false,
+                connectionRequestId: pendingRequestIds.conn13,
             },
             {
                 receiverId: u[6].id,
@@ -375,6 +382,7 @@ export class SeedService {
                 type: 'REQUEST',
                 message: `${u[4].username} sent you a connection request`,
                 read: false,
+                connectionRequestId: pendingRequestIds.conn46,
             },
             {
                 receiverId: u[1].id,

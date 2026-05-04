@@ -18,5 +18,6 @@ import { SocketModule } from '../common/socket.gateway.module';
     ],
     controllers: [ConnectionController],
     providers: [ConnectionService],
+    exports: [ConnectionService],
 })
 export class ConnectModule {}

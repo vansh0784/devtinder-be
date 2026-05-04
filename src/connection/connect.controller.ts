@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Req, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, Body, Param, UseGuards } from '@nestjs/common';
 import { ConnectionService } from './connect.service';
 import { BaseResponse } from '../common/dto';
 import { User } from '../common/entities/user.entity';
@@ -35,6 +35,16 @@ export class ConnectionController {
     async rejectRequest(@Body() body: { requestId: string }, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
         return this.connectService.rejectRequest(body.requestId, currentUserId);
+    }
+
+    /**
+     * Find pending incoming connection doc id where you are receiver (userB) and `:senderId` is userA.
+     * Useful for REQUEST notifications missing connectionRequestId.
+     */
+    @Get('pending-from/:senderId')
+    async pendingFromSender(@Param('senderId') senderId: string, @Req() req: { session: SessionDto }) {
+        const requestId = await this.connectService.findPendingRequestId(senderId, req.session.user_id);
+        return requestId ? { requestId } : null;
     }
 
     @Get('requests')

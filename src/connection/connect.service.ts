@@ -47,13 +47,13 @@ export class ConnectionService {
             throw new BadRequestException('Already swiped or connected');
         }
 
-        await this.connectModel.create({
+        const pendingConn = await this.connectModel.create({
             userA: senderId,
             userB: receiverId,
             status: ConnectionStatus.PENDING,
         });
 
-        await this.persistAndEmitConnectionRequest(senderId, receiverId);
+        await this.persistAndEmitConnectionRequest(senderId, receiverId, pendingConn._id.toString());
         return { statusCode: 200, message: 'Right swipe sent successfully 👍' };
     }
 
@@ -100,6 +100,12 @@ export class ConnectionService {
         connectionRequest.status = ConnectionStatus.ACCEPTED;
         await connectionRequest.save();
 
+        await this.notificationService.markInboundRequestDismissed(
+            currentUserId,
+            connectionRequest.userA.toString(),
+            connectionRequest._id.toString(),
+        );
+
         const senderId = connectionRequest.userA.toString();
         const accepterId = connectionRequest.userB.toString();
         await this.persistAndEmitResponse(senderId, accepterId, 'REQUEST_ACCEPTED', 'accepted your connection request');
@@ -124,6 +130,12 @@ export class ConnectionService {
 
         connectionRequest.status = ConnectionStatus.REJECTED;
         await connectionRequest.save();
+
+        await this.notificationService.markInboundRequestDismissed(
+            currentUserId,
+            connectionRequest.userA.toString(),
+            connectionRequest._id.toString(),
+        );
 
         const senderId = connectionRequest.userA.toString();
         const rejectorId = connectionRequest.userB.toString();
@@ -158,7 +170,34 @@ export class ConnectionService {
         });
     }
 
-    private async persistAndEmitConnectionRequest(senderId: string, receiverId: string) {
+    /** Both users accepted a match swipe (accepted connection exists). */
+    async areMatchedFriends(userIdA: string, userIdB: string): Promise<boolean> {
+        if (!userIdA || !userIdB || userIdA === userIdB) {
+            return false;
+        }
+
+        const link = await this.connectModel.exists({
+            status: ConnectionStatus.ACCEPTED,
+            $or: [
+                { userA: userIdA, userB: userIdB },
+                { userA: userIdB, userB: userIdA },
+            ],
+        });
+
+        return Boolean(link);
+    }
+
+    async findPendingRequestId(senderUserId: string, incomingForUserId: string): Promise<string | null> {
+        const doc = await this.connectModel.findOne({
+            userA: senderUserId,
+            userB: incomingForUserId,
+            status: ConnectionStatus.PENDING,
+        }).select('_id');
+
+        return doc ? doc._id.toString() : null;
+    }
+
+    private async persistAndEmitConnectionRequest(senderId: string, receiverId: string, connectionMongoId: string) {
         const sender = await this.userModel.findById(senderId).select('username').lean();
         const name = (sender as any)?.username ?? 'Someone';
 
@@ -168,6 +207,7 @@ export class ConnectionService {
             type: 'REQUEST',
             message: `${name} sent you a connection request`,
             read: false,
+            connectionRequestId: connectionMongoId as any,
         });
 
         const payload = await this.notificationService.serializeForSocket(created._id.toString());
