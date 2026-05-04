@@ -21,6 +21,13 @@ export class User extends Document {
     @Prop({ type: [String], default: [] })
     skills: string[];
 
+    @Prop({ type: [String], default: [] })
+    interests: string[];
+
+    /** From onboarding — e.g. Open Source, Startup */
+    @Prop({ type: [String], default: [] })
+    projectTypes: string[];
+
     @Prop()
     bio: string;
 

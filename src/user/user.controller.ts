@@ -22,11 +22,6 @@ export class UserController {
     }
 
     @UseGuards(JwtAuthGuard)
-    // @Get('profile')
-    // async getProfile(@Req() req: { session: SessionDto }): Promise<User> {
-    //     const user_id = (req as any).user.user_id;
-    //     return this.userService.getProfile(user_id);
-    // }
     @Get('profile')
     async getProfile(@Req() req: { session: SessionDto }) {
         const user_id = req?.session?.user_id;

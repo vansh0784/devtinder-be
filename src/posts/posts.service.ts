@@ -18,26 +18,54 @@ export class PostService {
         private readonly s3Service: S3Service,
     ) {}
 
-    async createPost(currentUserId: string, dto: CreatePostDto, file: Express.Multer.File): Promise<BaseResponse> {
-        if (!currentUserId || !file || !dto) throw new BadRequestException('Missing required fields');
+    private parseTags(raw?: string): string[] {
+        if (!raw || typeof raw !== 'string') return [];
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed.map((x) => `${x}`.trim()).filter(Boolean);
+        } catch {
+            /* comma-separated */
+        }
+        return raw
+            .split(',')
+            .map((x) => x.trim().replace(/^#/, ''))
+            .filter(Boolean);
+    }
 
+    async createPost(currentUserId: string, dto: CreatePostDto, file?: Express.Multer.File): Promise<BaseResponse> {
+        if (!currentUserId) throw new BadRequestException('Missing user');
         const user = await this.userModel.findById(currentUserId);
         if (!user) throw new BadRequestException('Invalid user');
 
-        const fileUrl: string = await this.s3Service.uploadFile(file);
-        if (!fileUrl) throw new BadRequestException('Upload to S3 failed');
+        const images: string[] = [];
+        const hasUploadedFile = Boolean(file?.buffer && file.buffer.length > 0);
+        if (hasUploadedFile) {
+            const fileUrl = await this.s3Service.uploadFile(file as Express.Multer.File);
+            if (!fileUrl) throw new BadRequestException('Upload to S3 failed');
+            images.push(fileUrl);
+        }
+
+        const text = dto.text?.trim() ?? '';
+        const code = dto.code?.trim() ?? '';
+        const projectLink = dto.projectLink?.trim() ?? '';
+        const hasBody = !!(text || code || projectLink || images.length > 0);
+        if (!hasBody) {
+            throw new BadRequestException('Add text, code, project link, and/or an image');
+        }
+
+        const tagsList = dto.tags?.trim() ? this.parseTags(dto.tags) : [];
 
         const post = await this.postModel.create({
             author: currentUserId,
             authorName: user.username,
             authorUsername: user.username,
-            authorAvatar: user.avatar,
+            authorAvatar: user.avatar ?? '',
             authorVerified: true,
-            images: [fileUrl],
-            text: dto.text || '',
-            code: dto.code || '',
-            projectLink: dto.projectLink || '',
-            tags: dto.tags || [],
+            images,
+            text,
+            code,
+            projectLink,
+            tags: tagsList,
             visibility: dto.visibility || 'public',
         });
 
@@ -66,48 +94,53 @@ export class PostService {
             .skip(skip)
             .limit(size)
             .sort({ createdAt: -1 })
-            .populate('author', 'username _id')
+            .populate({ path: 'author', select: 'username avatar _id' })
+            .populate({
+                path: 'comments.user',
+                select: 'username avatar',
+            })
             .exec();
 
+        /* Fill feed with recent public posts from others (consistent shape vs aggregation). */
         if (posts.length < size) {
-            const remaining = size - posts.length;
-            const randomPosts = await this.postModel.aggregate([
-                {
-                    $match: {
-                        author: { $nin: [currentUserId, ...connectionList] },
-                    },
-                },
-                { $sample: { size: remaining } },
-                {
-                    $project: {
-                        author: 1,
-                        images: 1,
-                        text: 1,
-                        code: 1,
-                        likes: 1,
-                        comments: 1,
-                        tags: 1,
-                        authorName: 1,
-                        authorUserName: 1,
-                    },
-                },
-            ]);
-
-            posts = [...posts, ...randomPosts];
+            const exclude = [...new Set([currentUserId, ...connectionList])];
+            const more = await this.postModel
+                .find({
+                    visibility: 'public',
+                    author: { $nin: exclude },
+                })
+                .sort({ createdAt: -1 })
+                .limit(size - posts.length)
+                .populate({ path: 'author', select: 'username avatar _id' })
+                .populate({
+                    path: 'comments.user',
+                    select: 'username avatar',
+                })
+                .exec();
+            const seen = new Set(posts.map((p) => p._id.toString()));
+            for (const p of more) {
+                const id = p._id.toString();
+                if (!seen.has(id)) {
+                    seen.add(id);
+                    posts.push(p);
+                }
+                if (posts.length >= size) break;
+            }
         }
+
         return posts;
     }
 
     async getMyPosts(currentUserId: string, page: number = 1, size: number = 10): Promise<Post[]> {
         if (!currentUserId) throw new BadRequestException('Missing user id');
         const skip = (page - 1) * size;
-        return await this.postModel.find({ author: currentUserId }).skip(skip).limit(size).sort({ createdAt: -1 }).select('author images text code likes comment tags').populate('author', 'username avatar').exec();
+        return await this.postModel.find({ author: currentUserId }).skip(skip).limit(size).sort({ createdAt: -1 }).populate('author', 'username avatar').populate({ path: 'comments.user', select: 'username avatar' }).exec();
     }
 
     async getPostsByUser(userId: string, page: number = 1, size: number = 10): Promise<Post[]> {
         if (!userId) throw new BadRequestException('Profile id is not found');
         const skip = (page - 1) * size;
-        return this.postModel.find({ author: userId }).skip(skip).limit(size).sort({ createdAt: -1 }).select('author images text code likes comment tags').populate('author', 'username avatar').exec();
+        return this.postModel.find({ author: userId }).skip(skip).limit(size).sort({ createdAt: -1 }).populate('author', 'username avatar').populate({ path: 'comments.user', select: 'username avatar' }).exec();
     }
 
     async getPostById(postId: string): Promise<Post | null> {

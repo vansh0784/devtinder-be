@@ -1,29 +1,13 @@
 import { IsString, IsOptional, IsArray, IsBoolean, IsEnum } from 'class-validator';
 
+/** Multipart-safe: author fields come from JWT in the controller; tags may be comma-separated. */
 export class CreatePostDto {
-    @IsString()
-    author: string;
-
-    @IsString()
-    authorName: string;
-
-    @IsString()
-    authorUsername: string;
-
-    @IsString()
-    @IsOptional()
-    authorAvatar?: string;
-
-    @IsBoolean()
-    @IsOptional()
-    authorVerified?: boolean;
-
     @IsString()
     @IsOptional()
     text?: string;
 
-    @IsArray()
     @IsOptional()
+    @IsArray()
     images?: string[];
 
     @IsString()
@@ -34,9 +18,10 @@ export class CreatePostDto {
     @IsOptional()
     projectLink?: string;
 
-    @IsArray()
+    /** Comma-separated from FormData, e.g. "react,nodejs" */
+    @IsString()
     @IsOptional()
-    tags?: string[];
+    tags?: string;
 
     @IsBoolean()
     @IsOptional()

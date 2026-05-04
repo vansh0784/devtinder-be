@@ -35,8 +35,19 @@ export class UpdateUserDto {
     phone?: string;
 
     @IsArray()
+    @IsString({ each: true })
     @IsOptional()
     skills?: string[];
+
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    interests?: string[];
+
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    projectTypes?: string[];
 
     @IsString()
     @IsOptional()

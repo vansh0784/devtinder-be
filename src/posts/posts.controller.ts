@@ -14,27 +14,32 @@ export class PostController {
 
     @Post()
     @UseInterceptors(FileInterceptor('image'))
-    async createPost(@Body() dto: CreatePostDto, @UploadedFile() file: Express.Multer.File, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
+    async createPost(@Body() dto: CreatePostDto, @UploadedFile() file: Express.Multer.File | undefined, @Req() req: { session: SessionDto }): Promise<BaseResponse> {
         const currentUserId = req.session.user_id;
-        console.log('file', file);
         return await this.postService.createPost(currentUserId, dto, file);
     }
 
     @Get()
     async getFeed(@Req() req: { session: SessionDto }, @Query('page') page: string, @Query('size') size: string) {
         const currentUserId = req.session.user_id;
-        return await this.postService.getFeed(currentUserId, +page, +size);
+        const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
+        const s = Math.min(50, Math.max(1, parseInt(size ?? '10', 10) || 10));
+        return await this.postService.getFeed(currentUserId, p, s);
     }
 
     @Get('me')
     async getMyPosts(@Req() req: { session: SessionDto }, @Query('page') page: string, @Query('size') size: string) {
         const currentUserId = req.session.user_id;
-        return await this.postService.getMyPosts(currentUserId, +page, +size);
+        const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
+        const s = Math.min(50, Math.max(1, parseInt(size ?? '10', 10) || 10));
+        return await this.postService.getMyPosts(currentUserId, p, s);
     }
 
     @Get('user/:userId')
     async getUserPosts(@Param('userId') userId: string, @Query('page') page: string, @Query('size') size: string) {
-        return await this.postService.getPostsByUser(userId, +page, +size);
+        const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
+        const s = Math.min(50, Math.max(1, parseInt(size ?? '10', 10) || 10));
+        return await this.postService.getPostsByUser(userId, p, s);
     }
 
     @Get(':postId')
